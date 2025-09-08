@@ -36,5 +36,5 @@ Future expansions:
 **Authentication**: JWT (initial) + OAuth (Google/Firebase planned)  
 **Testing**: Jest, Postman, Cypress  
 **Automation**: GitHub Actions CI/CD  
-**Deployment**: Frontend → Vercel or AWS S3 + CloudFront, Backend → AWS EC2 (Dockerized)  
+**Deployment**: Frontend → Vercel, Backend → AWS EC2 (Dockerized)  
 
