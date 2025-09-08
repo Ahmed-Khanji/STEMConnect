@@ -2,7 +2,7 @@
 
 A platform where STEM students can connect to build projects, collaborate, and prepare for exams together.  
 
-🚀 **Live Demo:** [stemconnect.co](http://stemconnect.co)
+🚀 **Live Demo** *(will be)*: [stemconnect.co](http://stemconnect.co)
 
 ---
 
