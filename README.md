@@ -18,7 +18,7 @@ Future expansions:
 
 ## ✨ Features  
 
-- **Home Page**: Modern, engaging entry point inspired by [VirtualStudy](https://www.virtualstudy.app/) and [StudyTogether](https://www.studytogether.com/).
+- **Home Page**: Modern and engaging, register/login
 - **Study Rooms**: Real-time video + chat + flashcards.
 - **Pre-Exam Sprints**: Timed sessions with auto flashcard generation.  
 - **Project Management**: Post projects, recruit teammates, Trello-style boards.  
@@ -36,5 +36,5 @@ Future expansions:
 **Authentication**: JWT (initial) + OAuth (Google/Firebase planned)  
 **Testing**: Jest, Postman, Cypress  
 **Automation**: GitHub Actions CI/CD  
-**Deployment**: Frontend → Vercel or AWS S3 + CloudFront, Backend → AWS EC2 (Dockerized)  
+**Deployment**: Frontend → Vercel, Backend → AWS EC2 (Dockerized)  
 
