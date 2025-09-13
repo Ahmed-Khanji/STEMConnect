@@ -1,4 +1,11 @@
 {
+  "nav": {
     "login": "Connexion",
-    "register": "Enregistrer"
+    "register": "Inscription"
+  },
+  "hero": {
+    "title": "Connectez-vous, collaborez, créez.",
+    "paragraph": "Rejoignez des salles d’étude, collaborez sur des projets et participez à des tournois pour apprendre, progresser et aller plus loin avec des étudiants qui partagent votre passion.",
+    "GetStarted": "Commencer!"
+  }
 }

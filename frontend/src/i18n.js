@@ -17,6 +17,7 @@ i18n
     backend: {
       loadPath: "/locales/{{lng}}/translation.json", // Change path if you're using custom structure like /locales/translationEN.json
     },
+    react: { useSuspense: false }
   });
  
 i18n.on("languageChanged", (lng) => {

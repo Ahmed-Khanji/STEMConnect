@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import NavBar from '../components/home/NavBar';
+import Hero from '../components/home/Hero';
+import Features from '../components/home/Features';
 
 function Home() {
   // detect if the page is scrolled down
@@ -23,15 +25,15 @@ function Home() {
 
   return (
     <div className={isDark ? "dark" : ""}>
-      <div className='min-h-screen flex flex-col transition-colors duration-200
-        bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'
-      >
-          {/* navigation bar */}
+      <div className='flex flex-col gap-6 min-h-screen pt-32
+        transition-colors duration-300
+        bg-gradient-to-r from-white via-gray-50 to-gray-100
+        dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-gray-900
+      text-gray-900 dark:text-gray-100'
+      > 
           <NavBar scrolled={scrolled} />
-
-          {/* hero section */}
-
-          {/* features section */}
+          <Hero />
+          <Features />
 
           {/* steps section */}
 

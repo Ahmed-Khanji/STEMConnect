@@ -1,4 +1,14 @@
 {
+  "nav": {
     "login": "Login",
     "register": "Register"
+  },
+  "hero": {
+    "title": "Connect, Collaborate, Create.",
+    "paragraph": "Join study rooms, build projects, and compete in tournaments to learn, grow, and achieve more with students who share your passion.",
+    "GetStarted": "Get Started!"
+  },
+  "features": {
+    "title": "Key Features"
+  }
 }
