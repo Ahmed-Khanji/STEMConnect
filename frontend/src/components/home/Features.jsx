@@ -5,7 +5,7 @@ function Features() {
   const { t } = useTranslation();
   
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 py-8">
+    <section className="w-full max-w-7xl mx-auto py-8">
       <h2 className="text-3xl font-bold text-center mb-8">
         {t("features.title")}
       </h2>

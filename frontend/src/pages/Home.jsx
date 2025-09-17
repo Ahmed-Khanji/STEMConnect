@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import NavBar from '../components/home/NavBar';
 import Hero from '../components/home/Hero';
+import Stats from '../components/home/Stats';
 import Features from '../components/home/Features';
 
 function Home() {
@@ -33,6 +34,7 @@ function Home() {
       > 
           <NavBar scrolled={scrolled} />
           <Hero />
+          <Stats />
           <Features />
 
           {/* steps section */}
