@@ -13,7 +13,7 @@ function Hero({ className = "" }) {
                 {t("hero.title")}
             </h1>
 
-            <p className="text-lg lg:text-xl text-center max-w-3xl mx-auto
+            <p className="text-lg lg:text-xl text-center max-w-3xl mx-auto px-4
                 leading-relaxed"
             >
                 {t("hero.paragraph")}

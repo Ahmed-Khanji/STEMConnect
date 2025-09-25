@@ -36,6 +36,7 @@ function Home() {
           <Hero />
           <Stats />
           <Features />
+          {/* need animation scrolling here */}
 
           {/* steps section */}
 
