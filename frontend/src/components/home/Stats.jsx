@@ -22,8 +22,8 @@ export default function Stats() {
             />
             <StatCard 
               icon={<Database size={64} weight="duotone" className="text-indigo-600" />} 
-              subtitle="Built to Scale" 
-              text="Our platform scales with you, reliably." 
+              subtitle="Robust" 
+              text="Rich Resources and tools to enhance your experience." 
             />
         </div>
     )

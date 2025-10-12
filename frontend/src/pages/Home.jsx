@@ -3,6 +3,7 @@ import NavBar from '../components/home/NavBar';
 import Hero from '../components/home/Hero';
 import Stats from '../components/home/Stats';
 import Features from '../components/home/Features';
+import Footer from '../components/home/Footer';
 
 function Home() {
   // detect if the page is scrolled down
@@ -29,23 +30,16 @@ function Home() {
       <div className='flex flex-col gap-6 min-h-screen pt-32
         transition-colors duration-300
         bg-gradient-to-r from-white via-gray-50 to-gray-100
-        dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-gray-900
+        dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-800 dark:to-gray-900
       text-gray-900 dark:text-gray-100'
       > 
           <NavBar scrolled={scrolled} />
           <Hero />
           <Stats />
           <Features />
-          {/* need animation scrolling here */}
-
-          {/* steps section */}
-
-          {/* about section */}
-
-          {/* footer */}
+          <Footer />
       </div>
     </div>
-    
   )
 }
 
