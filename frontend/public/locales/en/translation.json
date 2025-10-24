@@ -3,7 +3,7 @@
     "login": "Login",
     "register": "Register"
   },
-  
+
   "hero": {
     "title": "Connect, Collaborate, Create.",
     "paragraph": "Join study rooms, build projects, and compete in tournaments to learn, grow, and achieve more with students who share your passion.",
@@ -18,14 +18,5 @@
     "projects_desc": "Build real world projects with fellow students and start a team",
     "tournaments": "Competitive Tournaments",
     "tournaments_desc": "Participate in coding and developer tournaments to test your skills"
-  },
-
-  "community": {
-    "eyebrow": "Not just a study room",
-    "title": "Find your community.\nSet goals. Achieve them. Get rewarded.",
-    "subtitle": "Join study rooms, track progress, and celebrate achievements with peers who’ve got your back.",
-    "cta": "Join the community",
-    "screenshot_alt": "STEMConnect dashboard preview",
-    "stronger": "Stronger together"
   }
 }
