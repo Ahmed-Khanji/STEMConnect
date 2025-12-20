@@ -41,7 +41,7 @@ export default function Features() {
     {
       title: t("features.projects"),
       desc: t("features.projects_desc"),
-      img: "projects.png",
+      img: "projects.avif",
       href: "/projects",
     },
     {
