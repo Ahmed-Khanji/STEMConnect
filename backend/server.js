@@ -3,6 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+const userRoutes = require("./routes/userRoutes");
+const { authRoutes, authenticateToken } = require("./routes/authRoutes");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -10,10 +13,10 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
-// Basic Route
-app.get('/', (req, res) => {
-    res.send('APUI is running...');
-});
+// Routes
+app.get('/', (req, res) => { res.send('APUI is running...'); });
+app.use("/api/users", authenticateToken, userRoutes);
+app.use("/api/auth", authRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
