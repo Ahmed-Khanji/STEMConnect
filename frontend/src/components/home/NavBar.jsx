@@ -99,8 +99,7 @@ function NavBar({ scrolled = false}) {
 
           {/* Auth buttons */}
           <div className="flex flex-row items-center ml-4">
-            <Link to="/login" className="inline-block hover:text-gray-500"> {t("nav.login")} </Link>
-            <Link to="/register" className="inline-block ml-4 hover:text-gray-500"> {t("nav.register")} </Link>
+            <Link to="/auth" className="inline-block hover:text-gray-500">{t("nav.auth")}</Link>
           </div>
         </div>
       </div>

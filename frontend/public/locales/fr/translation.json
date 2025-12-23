@@ -1,7 +1,6 @@
 {
   "nav": {
-    "login": "Connexion",
-    "register": "Inscription"
+    "auth": "Connexion / Inscription"
   },
   "hero": {
     "title": "Connectez-vous, collaborez, créez.",

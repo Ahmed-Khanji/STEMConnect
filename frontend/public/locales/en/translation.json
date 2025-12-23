@@ -1,7 +1,6 @@
 {
   "nav": {
-    "login": "Login",
-    "register": "Register"
+    "auth": "Login / Register"
   },
 
   "hero": {

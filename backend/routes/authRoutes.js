@@ -13,7 +13,7 @@ function authenticateToken(req, res, next) {
       if (err) return res.sendStatus(403); // Token invalid or expired
       // decoded payload
       req.user = {
-        id: decoded.userId,        // _id from MongoDB
+        userId: decoded.userId,
         email: decoded.email,
         name: decoded.name,
         authProvider: decoded.authProvider
@@ -29,7 +29,7 @@ router.post("/register", async (req, res) => {
       if (!name || !email || !password) return res.status(400).json({ error: "Name, email, and password are required" });
       // Check if user already exists
       const emailNorm = email.trim().toLowerCase();
-      const user = await User.findOne({ email: emailNorm });
+      const userExists = await User.findOne({ email: emailNorm });
       if (userExists) return res.status(409).json({ error: "User already exists" });
   
       // Create user
@@ -124,7 +124,7 @@ router.post("/token", async (req, res) => {
           { expiresIn: "1h" }
         );
   
-        return res.json({ accessToken });
+        return res.status(200).json({ accessToken });
       });
     } catch (err) {
       return res.status(500).json({ message: `Server error: ${err.message}` });

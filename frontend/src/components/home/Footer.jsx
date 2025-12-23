@@ -27,7 +27,6 @@ function FooterCol({ title, links = [] }) {
 export default function Footer() {
   const { t } = useTranslation();
 
-  // Columns content (fully translatable)
   const docs = {
     title: t("footer.docs.title", "Other documents"),
     links: [
@@ -54,7 +53,6 @@ export default function Footer() {
     ],
   };
 
-  // 4th column (custom)
   const explore = {
     title: t("footer.explore.title", "Explore"),
     links: [
