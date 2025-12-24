@@ -81,7 +81,7 @@ export default function Register({ onSwitchToLogin }) {
   }
 
   function handleGoogle() {
-    console.log("Google signup");
+    window.location.href = "http://localhost:3000/auth/google";
   }
 
   return (

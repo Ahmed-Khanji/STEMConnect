@@ -2,21 +2,25 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const passport = require("passport");
 
 const userRoutes = require("./routes/userRoutes");
 const { authRoutes, authenticateToken } = require("./routes/authRoutes");
+const authGoogleRoutes = require("./routes/authGoogle");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(passport.initialize());
 
 // Routes
 app.get('/', (req, res) => { res.send('APUI is running...'); });
 app.use("/api/users", authenticateToken, userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/auth", authGoogleRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
