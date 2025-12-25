@@ -22,6 +22,27 @@ function authenticateToken(req, res, next) {
     });
 }
 
+// GET /api/auth/me  (protected)
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    // req.user was set by authenticateToken from the JWT payload
+    const user = await User.findById(req.user.userId).select("-password -refreshToken");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Return, frontend expects: { user: {...} }
+    return res.json({
+      user: {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        authProvider: user.authProvider,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+});
+
 // Register
 router.post("/register", async (req, res) => {
     try {

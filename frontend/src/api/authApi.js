@@ -25,6 +25,13 @@ function handleError(err) {
     throw new Error(msg);
 }
 
+// attach token automatically to every axios requests
+authClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 // -------- API calls --------
 export async function register(payload) {
     // payload: { name, email, password }
@@ -44,4 +51,14 @@ export async function login(payload) {
     } catch (err) {
       handleError(err);
     }
+}
+
+// GET /api/auth/me, checks if user logged in and if yes who are they
+export async function getMe() {
+  try {
+    const res = await authClient.get("/me");
+    return res.data; // { user: {userId, name, email, authProvider}
+  } catch (err) {
+    handleError(err);
+  }
 }

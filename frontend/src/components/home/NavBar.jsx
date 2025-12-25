@@ -5,22 +5,33 @@ import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { MdOutlineNightlight, MdNightlight, MdOutlineLightMode, MdLightMode } from "react-icons/md";
 import { GrLanguage } from "react-icons/gr";
+import { useAuth } from "../../context/AuthContext.jsx";
+
+function getInitials(user) {
+  const name = user?.name || user?.firstName || "";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || "";
+  const second = parts[1]?.[0] || "";
+  return (first + second).toUpperCase() || "U";
+}
 
 function NavBar({ scrolled = false}) {
   const { t } = useTranslation();
   
+  const { user, loading, logout } = useAuth();
+
   // Close the dropdown when clicking outside
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
-    function hanbdleClickOutside(e) {
+    function handleClickOutside(e) {
       // we attached ref to the div wrapping the button and dropdown
       // if the clicked target is not inside that div, close the dropdown
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
-    document.addEventListener("mousedown", hanbdleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", hanbdleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -98,8 +109,34 @@ function NavBar({ scrolled = false}) {
           </button>
 
           {/* Auth buttons */}
-          <div className="flex flex-row items-center ml-4">
-            <Link to="/auth" className="inline-block hover:text-gray-500">{t("nav.auth")}</Link>
+          <div className="flex flex-row items-center">
+            {loading ? (
+              <div className="h-9 w-9 rounded-full bg-black/10 dark:bg-white/10 animate-pulse" />
+            ) : user ? (
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div
+                  className="h-9 w-9 rounded-full hover:cursor-pointer
+                            bg-emerald-400/30 border border-emerald-300/40
+                            flex items-center justify-center font-semibold text-black"
+                  title={user?.name || user?.email || "User"}
+                >
+                  {getInitials(user)}
+                </div>
+
+                {/* logout button */}
+                <button
+                  onClick={logout}
+                  className="px-3 py-2 hover:text-gray-500"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link to="/auth" className="inline-block hover:text-gray-500">
+                {t("nav.auth")}
+              </Link>
+            )}
           </div>
         </div>
       </div>

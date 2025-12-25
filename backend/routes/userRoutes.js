@@ -16,13 +16,6 @@ const sanitizeUser = (userDoc) => {
   return u;
 };
 
-// GET /api/users/me expects req.user to exist
-router.get("/me", (req, res) => {
-    // In auth middleware later, you will set req.user = { userId, ... }
-    if (!req.user?.userId) return res.status(401).json({ message: "Not authenticated" });
-    return res.json({ message: "Attach auth middleware later", userId: req.user.userId });
-  });
-
 // POST /api/users Create a user (usually for admin/testing; normal signup will be in authRoutes)
 router.post("/", async (req, res) => {
   try {
