@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
 import Auth from './pages/Auth.jsx';
+import Course from './pages/Course.jsx';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -11,8 +13,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         {/* 
-        <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
         <Route path="/courses/:id/room" element={<ProtectedRoute><CourseRoom /></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />

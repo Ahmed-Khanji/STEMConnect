@@ -18,7 +18,7 @@ export default function Stats() {
             <StatCard 
               icon={<GraduationCap size={64} weight="duotone" className="text-amber-500" />} 
               subtitle="Impact" 
-              text="We’ve supported 500+ students on their learning journey." 
+              text="We’ve supported 20+ students on their learning journey." 
             />
             <StatCard 
               icon={<Database size={64} weight="duotone" className="text-indigo-600" />} 

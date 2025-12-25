@@ -36,6 +36,7 @@ router.get("/me", authenticateToken, async (req, res) => {
         name: user.name,
         email: user.email,
         authProvider: user.authProvider,
+        courses: user.courses, // array of ObjectIds
       },
     });
   } catch (err) {

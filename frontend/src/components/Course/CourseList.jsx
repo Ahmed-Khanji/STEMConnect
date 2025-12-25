@@ -1,17 +1,30 @@
-import { GraduationCap, Hash } from 'lucide-react';
+import { GraduationCap, BookOpenCheck } from 'lucide-react';
 
 export function CourseList({ courses, selectedCourse, onSelectCourse }) {
+    function getCurrentSemester() {
+        const now = new Date();
+        const month = now.getMonth(); // 0 = Jan, 11 = Dec
+        const year = now.getFullYear();
+      
+        let semester;
+        if (month <= 4) semester = "Winter";
+        else if (month <= 7) semester = "Summer";
+        else semester = "Fall";
+      
+        return `${semester} ${year}`;
+    }
+    
     return (
       <div className="w-80 flex flex-col bg-white border-r border-gray-200">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-gray-900">StudyHub</h2>
-              <p className="text-xs text-gray-500">Winter 2025</p>
+              <h2 className="text-gray-900">Courses</h2>
+              <p className="text-xs text-gray-500">{getCurrentSemester()}</p>
             </div>
           </div>
         </div>
@@ -34,7 +47,7 @@ export function CourseList({ courses, selectedCourse, onSelectCourse }) {
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: course.color + '20' }}
                 >
-                  <Hash className="w-5 h-5" style={{ color: course.color }} />
+                  <BookOpenCheck className="w-5 h-5" style={{ color: course.color }} />
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className={`text-sm truncate ${
