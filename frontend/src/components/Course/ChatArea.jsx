@@ -52,7 +52,7 @@ const mockMessages = [
   },
 ];
 
-export function ChatArea({ course }) {
+export default function ChatArea({ course }) {
   const [messages] = useState(mockMessages);
   const [inputValue, setInputValue] = useState('');
 

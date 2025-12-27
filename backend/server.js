@@ -7,6 +7,7 @@ const passport = require("passport");
 const userRoutes = require("./routes/userRoutes");
 const { authRoutes, authenticateToken } = require("./routes/authRoutes");
 const authGoogleRoutes = require("./routes/authGoogle");
+const courseRoutes = require("./routes/courseRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.get('/', (req, res) => { res.send('APUI is running...'); });
 app.use("/api/users", authenticateToken, userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/auth", authGoogleRoutes);
+app.use("/api/courses", courseRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })

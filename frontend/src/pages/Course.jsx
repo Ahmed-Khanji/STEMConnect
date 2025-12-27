@@ -1,25 +1,71 @@
-import { useState } from 'react';
-import { CourseList } from '../components/Course/CourseList';
-import { ChatArea } from '../components/Course/ChatArea';
-import { QuickActions } from '../components/Course/QuickActions';
-
-const mockCourses = [
-  { id: '1', name: 'Advanced Mathematics', code: 'MATH301', color: '#8B5CF6', unreadCount: 3 },
-  { id: '2', name: 'Computer Science', code: 'CS202', color: '#3B82F6', unreadCount: 0 },
-  { id: '3', name: 'Data Structures', code: 'CS305', color: '#10B981', unreadCount: 7 },
-  { id: '4', name: 'Physics II', code: 'PHY201', color: '#F59E0B', unreadCount: 0 },
-  { id: '5', name: 'English Literature', code: 'ENG104', color: '#EC4899', unreadCount: 2 },
-  { id: '6', name: 'Chemistry Lab', code: 'CHEM250', color: '#14B8A6', unreadCount: 0 },
-];
+import { useEffect, useState } from "react";
+import CourseList from "../components/Course/CourseList";
+import ChatArea from "../components/Course/ChatArea";
+import QuickActions from "../components/Course/QuickActions";
+import SearchCourse from "../components/Course/SearchCourse";
+import { getMyCourses } from "../api/courseApi";
 
 export default function Course() {
-  const [selectedCourse, setSelectedCourse] = useState(mockCourses[0]);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCourses() {
+      try {
+        setLoading(true);
+        const data = await getMyCourses();
+        setCourses(data);
+        setSelectedCourse(data[0] || null);
+      } catch (err) {
+        console.error("Failed to load courses:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCourses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+        Loading courses...
+      </div>
+    );
+  }
+
+  if (!selectedCourse) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-b from-blue-300 to-pink-50 p-6">
+        <div className="w-full flex flex-col items-center gap-6">
+          <p className="text-gray-700">No courses yet. Join one or create one.</p>
+  
+          <SearchCourse
+            onSelectCourse={(course) => {
+              // when user clicks a suggestion
+              setCourses((prev) => {
+                // if already in courses, do nothing, else prepend it (most recent one)
+                const exists = prev.some((c) => (c._id || c.id) === (course._id || course.id));
+                return exists ? prev : [course, ...prev];
+              });
+              setSelectedCourse(course);
+            }}
+            onCreateClick={() => {
+              // later: open create modal
+              console.log("Open create course modal");
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
       {/* Left Sidebar - Courses */}
       <CourseList
-        courses={mockCourses}
+        courses={courses}
         selectedCourse={selectedCourse}
         onSelectCourse={setSelectedCourse}
       />
@@ -27,7 +73,7 @@ export default function Course() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-white/70 backdrop-blur border-b border-white/30 px-6 py-4">
           <h1 className="text-gray-900">{selectedCourse.name}</h1>
           <p className="text-sm text-gray-500">
             {selectedCourse.code} • 24 students online
@@ -36,9 +82,7 @@ export default function Course() {
 
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Chat Area */}
           <ChatArea course={selectedCourse} />
-          {/* Right Sidebar - Quick Actions */}
           <QuickActions course={selectedCourse} />
         </div>
       </div>

@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, default: null },
     authProvider: { type: String, enum: ["local", "google"], default: "local" },
     oauthId: { type: String, unique: true, sparse: true, default: null },
-    refreshToken: { type: String, default: null }
+    refreshToken: { type: String, default: null },
+    courses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }], // many-to-many
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

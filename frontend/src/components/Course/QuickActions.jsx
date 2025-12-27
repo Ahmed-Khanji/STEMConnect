@@ -1,6 +1,6 @@
 import { FileText, Zap, Clock, TrendingUp } from 'lucide-react';
 
-export function QuickActions({ course }) {
+export default function QuickActions({ course }) {
   const handleAction = (action) => {
     // In a real app, this would navigate to the respective feature
     console.log(`Starting ${action} for ${course.name}`);

@@ -1,6 +1,6 @@
 import { GraduationCap, BookOpenCheck } from 'lucide-react';
 
-export function CourseList({ courses, selectedCourse, onSelectCourse }) {
+export default function CourseList({ courses, selectedCourse, onSelectCourse }) {
     function getCurrentSemester() {
         const now = new Date();
         const month = now.getMonth(); // 0 = Jan, 11 = Dec
@@ -15,9 +15,9 @@ export function CourseList({ courses, selectedCourse, onSelectCourse }) {
     }
     
     return (
-      <div className="w-80 flex flex-col bg-white border-r border-gray-200">
+      <div className="w-80 flex flex-col bg-gradient-to-br from-purple-300 to-blue-300 border-r border-white/30">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
               <GraduationCap className="w-6 h-6 text-white" />
@@ -68,7 +68,7 @@ export function CourseList({ courses, selectedCourse, onSelectCourse }) {
         </div>
   
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
               <span className="text-white">JD</span>

@@ -54,11 +54,32 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 
-// GET /api/courses, Returns ONLY courses the logged-in user is enrolled in (Optional: ?q=CS (search by name/code))
+// GET /api/courses, Returns ALL courses (Optional: ?q=CS searches by name/code)
 router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+
+    const filter = {};
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { code: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    const courses = await Course.find(filter).sort({ createdAt: -1 });
+    return res.json({ courses });
+  } catch (err) {
+    return res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+});
+
+// GET /api/courses/mycourses, Returns ONLY courses the logged-in user is enrolled in (Optional: ?q=CS searches by name/code)
+router.get("/mycourses", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     const q = (req.query.q || "").trim();
+
     const filter = { users: userId };
     if (q) {
       filter.$or = [
@@ -66,7 +87,7 @@ router.get("/", authenticateToken, async (req, res) => {
         { code: { $regex: q, $options: "i" } },
       ];
     }
-    
+
     const courses = await Course.find(filter).sort({ createdAt: -1 });
     return res.json({ courses });
   } catch (err) {
@@ -114,7 +135,7 @@ router.patch("/:id", authenticateToken, async (req, res) => {
     if (String(course.createdBy) !== String(userId)) {
       return res.status(403).json({ message: "Only the creator can update this course" });
     }
-
+      
     Object.assign(course, updates);
     const saved = await course.save();
 
@@ -144,7 +165,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       { _id: { $in: course.users } },
       { $pull: { courses: course._id } }
     );
-
     await Course.deleteOne({ _id: course._id });
 
     return res.json({ message: "Course deleted" });
@@ -153,41 +173,50 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
 });
 
-/* =========================
-   JOIN
-   POST /api/courses/:id/join
-   ========================= */
+
+// POST /api/courses/:id/join, join/enroll a logged-in user to a course
 router.post("/:id/join", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid course id" });
 
     const userId = req.user.userId;
-
     const course = await Course.findById(id).select("_id");
     if (!course) return res.status(404).json({ message: "Course not found" });
 
     await addUserToCourse(userId, course._id);
-
     return res.json({ message: "Joined course" });
   } catch (err) {
     return res.status(500).json({ message: `Server error: ${err.message}` });
   }
 });
 
-/* =========================
-   LEAVE
-   POST /api/courses/:id/leave
-   =========================
-   Optional rule: creator can't leave (because they'd be locked out)
-*/
+// POST /api/courses/join-by-code, Join by code: Body: { code }
+router.post("/join-by-code", authenticateToken, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: "code is required" });
+
+    const userId = req.user.userId;
+    const course = await Course.findOne({ code: String(code).trim().toUpperCase() }).select("_id");
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    await addUserToCourse(userId, course._id);
+
+    return res.json({ message: "Joined course", courseId: course._id });
+  } catch (err) {
+    return res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+});
+
+
+// POST /api/courses/:id/leave, unenroll a user to a course, rule: creator can't leave (because they'd be locked out)
 router.post("/:id/leave", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid course id" });
 
     const userId = req.user.userId;
-
     const course = await Course.findById(id).select("createdBy");
     if (!course) return res.status(404).json({ message: "Course not found" });
 
@@ -196,31 +225,7 @@ router.post("/:id/leave", authenticateToken, async (req, res) => {
     }
 
     await removeUserFromCourse(userId, course._id);
-
     return res.json({ message: "Left course" });
-  } catch (err) {
-    return res.status(500).json({ message: `Server error: ${err.message}` });
-  }
-});
-
-/* =========================
-   BONUS: Join by code (very useful)
-   POST /api/courses/join-by-code
-   Body: { code }
-   ========================= */
-router.post("/join-by-code", authenticateToken, async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ message: "code is required" });
-
-    const userId = req.user.userId;
-
-    const course = await Course.findOne({ code: String(code).trim().toUpperCase() }).select("_id");
-    if (!course) return res.status(404).json({ message: "Course not found" });
-
-    await addUserToCourse(userId, course._id);
-
-    return res.json({ message: "Joined course", courseId: course._id });
   } catch (err) {
     return res.status(500).json({ message: `Server error: ${err.message}` });
   }
