@@ -36,10 +36,21 @@ export async function getMyCourses() {
     }
 }
 
-export async function joinCourse(courseId) {
+export async function joinCourseByCode(code) {
   try {
-    const res = await client.post(`/api/courses/${courseId}/join`);
-    return res.data;
+    const res = await client.post("/api/courses/join-by-code", {
+      code,
+    });
+    return res.data; // { message, courseId }
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function leaveCourse(courseId) {
+  try {
+    const res = await client.post(`/api/courses/${courseId}/leave`);
+    return res.data; // { message: "Left course" }
   } catch (err) {
     handleError(err);
   }

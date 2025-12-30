@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo.png';
+import logo from '@/assets/logo.png';
 import { MdOutlineNightlight, MdNightlight, MdOutlineLightMode, MdLightMode } from "react-icons/md";
 import { GrLanguage } from "react-icons/gr";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { useTheme } from "@/context/ThemeContext";
 
 function getInitials(user) {
   const name = user?.name || user?.firstName || "";
@@ -17,16 +18,14 @@ function getInitials(user) {
 
 function NavBar({ scrolled = false}) {
   const { t } = useTranslation();
-  
   const { user, loading, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   // Close the dropdown when clicking outside
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
     function handleClickOutside(e) {
-      // we attached ref to the div wrapping the button and dropdown
-      // if the clicked target is not inside that div, close the dropdown
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -34,15 +33,6 @@ function NavBar({ scrolled = false}) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // toggle dark mode
-  const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-  useEffect(() => {
-    localStorage.setItem("theme", isDark ? 'dark' : 'light');
-    window.dispatchEvent(new Event("theme-change"));
-  }, [isDark]);
 
   return (
     <nav className={`fixed top-0 inset-x-0 z-50
@@ -94,7 +84,7 @@ function NavBar({ scrolled = false}) {
           </div>
           
           {/* dark mode toggle button */}
-          <button onClick={() => setIsDark((v) => !v)} className="group p-2">
+          <button onClick={toggleTheme} className="group p-2">
             {isDark ? (
               <>
                 <MdOutlineLightMode className="text-xl sm:text-2xl block group-hover:hidden" />

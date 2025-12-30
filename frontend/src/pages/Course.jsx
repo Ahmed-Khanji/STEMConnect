@@ -3,12 +3,14 @@ import CourseList from "../components/Course/CourseList";
 import ChatArea from "../components/Course/ChatArea";
 import QuickActions from "../components/Course/QuickActions";
 import SearchCourse from "../components/Course/SearchCourse";
-import { getMyCourses } from "../api/courseApi";
+import CreateCourseModal from "../components/Course/CreateCourseModal";
+import { getMyCourses, leaveCourse } from "../api/courseApi";
 
 export default function Course() {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     async function loadCourses() {
@@ -26,6 +28,27 @@ export default function Course() {
 
     loadCourses();
   }, []);
+
+  async function handleDropCourse(courseId) {
+    try {
+      await leaveCourse(courseId);
+      // Remove course from list
+      const updatedCourses = courses.filter((c) => {
+        const id = c._id || c.id;
+        return id !== courseId;
+      });
+      setCourses(updatedCourses);
+      // Update selected course - select first remaining course or null
+      if (updatedCourses.length > 0) {
+        setSelectedCourse(updatedCourses[0]);
+      } else {
+        setSelectedCourse(null);
+      }
+    } catch (err) {
+      console.error("Failed to drop course:", err);
+      alert(err.message || "Failed to drop course");
+    }
+  }
 
   if (loading) {
     return (
@@ -51,11 +74,16 @@ export default function Course() {
               });
               setSelectedCourse(course);
             }}
-            onCreateClick={() => {
-              // later: open create modal
-              console.log("Open create course modal");
-            }}
+            onCreateClick={() => setCreateOpen(true)} // open modal
           />
+          <CreateCourseModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(newCourse) => {
+            setCourses((prev) => [newCourse, ...prev]);
+            setSelectedCourse(newCourse);
+          }}
+        />
         </div>
       </div>
     );
@@ -68,6 +96,7 @@ export default function Course() {
         courses={courses}
         selectedCourse={selectedCourse}
         onSelectCourse={setSelectedCourse}
+        onDropCourse={handleDropCourse}
       />
 
       {/* Main Content */}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Register from "../components/Auth/Register";
-import Login from "../components/Auth/Login";
+import Register from "@/components/Auth/Register";
+import Login from "@/components/Auth/Login";
 
 export default function Auth() {
   const [mode, setMode] = useState("register"); // "register" | "login"
@@ -10,6 +10,7 @@ export default function Auth() {
 	 useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
+    const refreshToken = params.get("refreshToken");
     const error = params.get("error");
 
     if (error) {
@@ -18,11 +19,11 @@ export default function Auth() {
       return;
     }
 
-    if (token) {
-      localStorage.setItem("accessToken", token);
-      window.history.replaceState({}, "", "/auth"); // clean URL (remove ?token=...)
-      navigate("/"); // go where you want after login
-    }
+    if (token) localStorage.setItem("accessToken", token);
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+    window.history.replaceState({}, "", "/auth");
+    if (token) navigate("/");
   }, [navigate]); // will run everytime this page renders (navigate triggers when we are redirected)
 	
   return mode === "register" ? (

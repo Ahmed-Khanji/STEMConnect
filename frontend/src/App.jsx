@@ -4,6 +4,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
 import Auth from './pages/Auth.jsx';
 import Course from './pages/Course.jsx';
+import Test from './pages/Test.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -11,6 +12,7 @@ function App() {
   return (
     <div>
       <Routes>
+        <Route path="/test" element={<Test />} />
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />

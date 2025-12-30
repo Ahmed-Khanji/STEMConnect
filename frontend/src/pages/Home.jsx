@@ -15,30 +15,17 @@ function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // toggle dark mode
-  const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-  useEffect(() => {
-    const onThemeChange = () => setIsDark(localStorage.getItem("theme") === "dark");
-    window.addEventListener("theme-change", onThemeChange);
-    return () => window.removeEventListener("theme-change", onThemeChange);
-  }, []);
-
   return (
-    <div className={isDark ? "dark" : ""}>
-      <div className='flex flex-col gap-6 min-h-screen pt-32
-        transition-colors duration-300
-        bg-gradient-to-r from-white via-gray-50 to-gray-100
-        dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-800 dark:to-gray-900
+    <div className='flex flex-col gap-6 min-h-screen pt-32 transition-colors duration-300
+      bg-gradient-to-r from-white via-gray-50 to-gray-100
+      dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-800 dark:to-gray-900
       text-gray-900 dark:text-gray-100'
-      > 
-          <NavBar scrolled={scrolled} />
-          <Hero />
-          <Stats />
-          <Features />
-          <Footer />
-      </div>
+    >
+      <NavBar scrolled={scrolled} />
+      <Hero />
+      <Stats />
+      <Features />
+      <Footer />
     </div>
   )
 }

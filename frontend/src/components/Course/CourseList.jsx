@@ -1,6 +1,7 @@
 import { GraduationCap, BookOpenCheck } from 'lucide-react';
+import { Button } from '../ui/button';
 
-export default function CourseList({ courses, selectedCourse, onSelectCourse }) {
+export default function CourseList({ courses, selectedCourse, onSelectCourse, onDropCourse }) {
     function getCurrentSemester() {
         const now = new Date();
         const month = now.getMonth(); // 0 = Jan, 11 = Dec
@@ -33,12 +34,17 @@ export default function CourseList({ courses, selectedCourse, onSelectCourse }) 
         <div className="flex-1 overflow-y-auto p-4">
           <p className="text-xs uppercase tracking-wider text-gray-500 px-2 mb-3">Your Courses</p>
           <div className="space-y-1">
-            {courses.map((course) => (
+            {courses.map((course) => {
+              const courseId = course._id || course.id;
+              const selectedCourseId = selectedCourse?._id || selectedCourse?.id;
+              const isSelected = selectedCourseId === courseId;
+              
+              return (
               <button
-                key={course.id}
+                key={courseId}
                 onClick={() => onSelectCourse(course)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-                  selectedCourse.id === course.id
+                  isSelected
                     ? 'bg-gradient-to-r from-purple-100 to-pink-100 shadow-sm'
                     : 'hover:bg-gray-50'
                 }`}
@@ -51,7 +57,7 @@ export default function CourseList({ courses, selectedCourse, onSelectCourse }) 
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className={`text-sm truncate ${
-                    selectedCourse.id === course.id ? 'text-gray-900' : 'text-gray-700'
+                    isSelected ? 'text-gray-900' : 'text-gray-700'
                   }`}>
                     {course.name}
                   </p>
@@ -63,9 +69,30 @@ export default function CourseList({ courses, selectedCourse, onSelectCourse }) 
                   </div>
                 )}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
+
+        {/* Drop Course Button - Only show when a course is selected */}
+        {selectedCourse && (
+          <div className="px-4 pb-4">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDropCourse && selectedCourse) {
+                  const courseId = selectedCourse._id || selectedCourse.id;
+                  onDropCourse(courseId);
+                }
+              }}
+              className="w-full"
+            >
+              Drop
+            </Button>
+          </div>
+        )}
   
         {/* User Profile */}
         <div className="p-4">
