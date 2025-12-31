@@ -144,7 +144,7 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
   }, [activeIndex]);
 
   return (
-    <div ref={wrapRef} className={`w-full max-w-2xl ${className}`}>
+    <div ref={wrapRef} className={`relative w-full ${className}`}>
       {/* Input row */}
       <div className="flex items-center gap-3">
         <div className="flex-1 relative">
@@ -157,7 +157,7 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
             onKeyDown={handleKeyDown}
             placeholder="Search courses by name or code..."
             className="w-full h-12 sm:h-14 pl-12 pr-12 rounded-2xl bg-white/70 border border-white/40 shadow-sm outline-none
-                       focus:ring-1 focus:ring-gray-400"
+                       ring-1 ring-gray-400 focus:ring-2 focus:ring-gray-500"
           />
 
           {/* right icon: loading */}
@@ -170,8 +170,8 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
         <button
           type="button"
           onClick={onCreateClick}
-          className="h-12 sm:h-14 w-12 sm:w-14 rounded-2xl bg-white/70 backdrop-blur border border-white/40 shadow-sm
-                     hover:bg-white/85 active:scale-[0.98] transition flex items-center justify-center"
+          className="flex items-center justify-center h-10 w-10 md:h-14 md:w-14 rounded-xl border border-black/20 bg-white shadow-md shadow-black/25
+            hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98] transition"
           aria-label="Create a new course"
           title="Create a new course"
         >
@@ -212,11 +212,13 @@ function CourseDropdown({
   const hasResults = results.length > 0;
 
   return (
-    <div className="mt-3 rounded-2xl bg-white/80 border border-white/40 shadow-lg overflow-hidden">
+    <div className="absolute left-0 right-0 top-[calc(100%+10px)] rounded-2xl 
+      bg-white/90 border border-black/10 shadow-xl shadow-black/25 z-50"
+    >
       {loading && !hasResults ? (
         <div className="px-4 py-4 text-sm text-gray-500">Searching…</div>
       ) : hasResults ? (
-        <ul className="max-h-72 overflow-y-auto">
+        <ul className="max-h-[204px] overflow-y-auto overflow-x-hidden rounded-b-2xl">
           {results.map((course, idx) => {
             const active = idx === activeIndex;
             const focused = course.id === focusedCourseId;

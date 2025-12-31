@@ -1,15 +1,18 @@
+// Course.jsx
 import { useEffect, useState } from "react";
 import CourseList from "../components/Course/CourseList";
 import ChatArea from "../components/Course/ChatArea";
 import QuickActions from "../components/Course/QuickActions";
 import SearchCourse from "../components/Course/SearchCourse";
 import CreateCourseModal from "../components/Course/CreateCourseModal";
-import { getMyCourses, leaveCourse } from "../api/courseApi";
+import { getMyCourses } from "../api/courseApi";
 
 export default function Course() {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // modal open
   const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
@@ -19,102 +22,68 @@ export default function Course() {
         const data = await getMyCourses();
         setCourses(data);
         setSelectedCourse(data[0] || null);
-      } catch (err) {
-        console.error("Failed to load courses:", err);
       } finally {
         setLoading(false);
       }
     }
-
     loadCourses();
   }, []);
 
-  async function handleDropCourse(courseId) {
-    try {
-      await leaveCourse(courseId);
-      // Remove course from list
-      const updatedCourses = courses.filter((c) => {
-        const id = c._id || c.id;
-        return id !== courseId;
-      });
-      setCourses(updatedCourses);
-      // Update selected course - select first remaining course or null
-      if (updatedCourses.length > 0) {
-        setSelectedCourse(updatedCourses[0]);
-      } else {
-        setSelectedCourse(null);
-      }
-    } catch (err) {
-      console.error("Failed to drop course:", err);
-      alert(err.message || "Failed to drop course");
-    }
+  function handleSelectCourse(course) {
+    setCourses((prev) => {
+      const cid = course._id || course.id;
+      const exists = prev.some((c) => (c._id || c.id) === cid);
+      return exists ? prev : [course, ...prev];
+    });
+    setSelectedCourse(course);
   }
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-        Loading courses...
-      </div>
-    );
+  function handleCourseCreated(created) {
+    setCourses((prev) => [created, ...prev]);
+    setSelectedCourse(created);
   }
 
   if (!selectedCourse) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-b from-blue-300 to-pink-50 p-6">
-        <div className="w-full flex flex-col items-center gap-6">
+      <div className="flex h-screen items-center justify-center bg-gradient-to-b from-blue-400 to-white">
+        <div className="w-full flex flex-col items-center max-w-2xl gap-6">
           <p className="text-gray-700">No courses yet. Join one or create one.</p>
-  
           <SearchCourse
-            onSelectCourse={(course) => {
-              // when user clicks a suggestion
-              setCourses((prev) => {
-                // if already in courses, do nothing, else prepend it (most recent one)
-                const exists = prev.some((c) => (c._id || c.id) === (course._id || course.id));
-                return exists ? prev : [course, ...prev];
-              });
-              setSelectedCourse(course);
-            }}
-            onCreateClick={() => setCreateOpen(true)} // open modal
+            onSelectCourse={handleSelectCourse}
+            onCreateClick={() => setCreateOpen(true)}
           />
           <CreateCourseModal
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          onCreated={(newCourse) => {
-            setCourses((prev) => [newCourse, ...prev]);
-            setSelectedCourse(newCourse);
-          }}
-        />
+            open={createOpen}
+            onClose={() => setCreateOpen(false)}
+            onCreated={handleCourseCreated}
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-      {/* Left Sidebar - Courses */}
+    <div className="flex h-screen">
       <CourseList
         courses={courses}
         selectedCourse={selectedCourse}
         onSelectCourse={setSelectedCourse}
-        onDropCourse={handleDropCourse}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white/70 backdrop-blur border-b border-white/30 px-6 py-4">
-          <h1 className="text-gray-900">{selectedCourse.name}</h1>
-          <p className="text-sm text-gray-500">
-            {selectedCourse.code} • 24 students online
-          </p>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          <ChatArea course={selectedCourse} />
-          <QuickActions course={selectedCourse} />
-        </div>
+      <div className="flex flex-1">
+        <ChatArea
+          course={selectedCourse}
+          onSelectCourse={handleSelectCourse}
+          onCreateClick={() => setCreateOpen(true)}
+        />
+        <QuickActions course={selectedCourse} />
       </div>
+
+      <CreateCourseModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleCourseCreated}
+      />
     </div>
   );
 }

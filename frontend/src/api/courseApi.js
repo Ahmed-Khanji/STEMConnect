@@ -7,10 +7,10 @@ function handleError(err) {
 }
 
 export async function createCourse(payload) {
-  // payload = { name, code, color };
+  // payload = { name, code, color }
   try {
     const res = await client.post("/api/courses", payload);
-    return res.data;
+    return res.data.course; // return the course itself
   } catch (err) {
     handleError(err);
   }
