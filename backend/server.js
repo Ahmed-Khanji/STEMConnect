@@ -3,11 +3,14 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const passport = require("passport");
+const http = require("http");
 
+const setupSockets = require("./sockets/chatSocket");
 const userRoutes = require("./routes/userRoutes");
 const { authRoutes, authenticateToken } = require("./routes/authRoutes");
 const authGoogleRoutes = require("./routes/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
+const messageRoutes = require("./routes/messageRoutes")
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,13 +26,19 @@ app.use("/api/users", authenticateToken, userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/auth", authGoogleRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/messages", messageRoutes);
+
+// Socket
+const server = http.createServer(app);
+const io = setupSockets(server);
+app.set("io", io); // make io available to routes with req.app.get("io")
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
         console.log('Connected to MongoDB');
         // Start the server
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);
         });
     })

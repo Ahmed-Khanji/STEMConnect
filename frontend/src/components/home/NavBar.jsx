@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.png';
 import { MdOutlineNightlight, MdNightlight, MdOutlineLightMode, MdLightMode } from "react-icons/md";
 import { GrLanguage } from "react-icons/gr";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -40,7 +39,7 @@ function NavBar({ scrolled = false}) {
     >
       <div className="flex justify-between items-center max-w-screen-2xl h-16 mx-auto px-8 lg:px-12">
         <Link to="/" className="flex items-center gap-3 cursor-pointer">
-          <img src={logo} alt="logo" className="w-8 h-8 sm:w-10 sm:h-10" />
+          <img src="/logo.png" alt="logo" className="w-8 h-8 sm:w-10 sm:h-10" />
           <span className="text-lg sm:text-2xl font-semibold">STEMConnect</span>
         </Link>
 

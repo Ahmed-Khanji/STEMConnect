@@ -1,11 +1,13 @@
-// Course.jsx
 import { useEffect, useState } from "react";
+
 import CourseList from "../components/Course/CourseList";
 import ChatArea from "../components/Course/ChatArea";
 import QuickActions from "../components/Course/QuickActions";
 import SearchCourse from "../components/Course/SearchCourse";
 import CreateCourseModal from "../components/Course/CreateCourseModal";
-import { getMyCourses } from "../api/courseApi";
+
+import { getMyCourses, leaveCourse } from "../api/courseApi";
+
 
 export default function Course() {
   const [courses, setCourses] = useState([]);
@@ -43,6 +45,35 @@ export default function Course() {
     setSelectedCourse(created);
   }
 
+  async function handleDropCourse(courseId) {
+    try {
+      await leaveCourse(courseId);
+      // remove the course from the list
+      setCourses((prev) => prev.filter((c) => (c._id || c.id) !== courseId));
+      // update the selected course if it was the one dropped
+      setSelectedCourse((prevSelected) => {
+        const prevId = prevSelected?._id || prevSelected?.id;
+        if (prevId !== courseId) return prevSelected;
+        const remaining = courses.filter((c) => (c._id || c.id) !== courseId);
+        return remaining[0] || null;
+      });
+    } catch (err) {
+      console.error("Drop failed:", err);
+      alert(err.message || "Failed to drop course");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500" />
+          <p className="text-gray-600 text-sm">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
+  
   if (!selectedCourse) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-b from-blue-400 to-white">
@@ -68,6 +99,7 @@ export default function Course() {
         courses={courses}
         selectedCourse={selectedCourse}
         onSelectCourse={setSelectedCourse}
+        onDropCourse={handleDropCourse}
       />
 
       <div className="flex flex-1">

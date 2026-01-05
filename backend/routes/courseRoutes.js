@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Course = require("../models/Course");
 const User = require("../models/User");
+const CourseReadState = require("../models/CourseReadState");
+const Message = require("../models/Message");
 const { authenticateToken } = require("./authRoutes");
 
 const router = express.Router();
@@ -90,6 +92,67 @@ router.get("/mycourses", authenticateToken, async (req, res) => {
 
     const courses = await Course.find(filter).sort({ createdAt: -1 });
     return res.json({ courses });
+  } catch (err) {
+    return res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+});
+
+// POST /api/courses/:id/read  (mark as read when user opens/selects a course)
+router.post("/:id/read", authenticateToken, async (req, res) => {
+  try {
+    const { id: courseId } = req.params;
+    if (!isValidObjectId(courseId)) {
+      return res.status(400).json({ message: "Invalid course id" });
+    }
+    // must be enrolled
+    const userId = req.user.userId;
+    const course = await Course.findOne({ _id: courseId, users: userId }).select("_id");
+    if (!course) return res.status(404).json({ message: "Course not found or access denied" });
+
+    await CourseReadState.updateOne(
+      { user: userId, course: courseId },
+      { $set: { lastReadAt: new Date() } },
+      { upsert: true } // If it doesn’t exist, it creates it
+    );
+
+    return res.json({ message: "Marked as read", courseId });
+  } catch (err) {
+    return res.status(500).json({ message: `Server error: ${err.message}` });
+  }
+});
+
+// GET /api/courses/unread-counts  (sidebar badges)
+router.get("/unread-counts", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    // courses user is enrolled in
+    const courses = await Course.find({ users: userId }).select("_id");
+    const courseIds = courses.map((c) => c._id);
+    if (courseIds.length === 0) return res.json({ unreadCounts: {} });
+
+    // read states for those courses
+    const states = await CourseReadState.find({
+      user: userId,
+      course: { $in: courseIds },
+    }).select("course lastReadAt");
+    const lastReadByCourse = new Map(
+      states.map((s) => [String(s.course), s.lastReadAt])
+    );
+
+    // count unread messages per course
+    const unreadPairs = await Promise.all(
+      courseIds.map(async (courseId) => {
+        const lastReadAt = lastReadByCourse.get(String(courseId)) || new Date(0);
+        const count = await Message.countDocuments({
+          course: courseId,
+          createdAt: { $gt: lastReadAt },
+        });
+        return [String(courseId), count];
+      })
+    );
+
+    const unreadCounts = Object.fromEntries(unreadPairs); // return it as an object
+    return res.json({ unreadCounts });
   } catch (err) {
     return res.status(500).json({ message: `Server error: ${err.message}` });
   }
@@ -210,22 +273,27 @@ router.post("/join-by-code", authenticateToken, async (req, res) => {
 });
 
 
-// POST /api/courses/:id/leave, unenroll a user to a course, rule: creator can't leave (because they'd be locked out)
+// POST /api/courses/:id/leave, unenroll a user to a course
 router.post("/:id/leave", authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid course id" });
+    const { id: courseId } = req.params;
+    if (!isValidObjectId(courseId)) return res.status(400).json({ message: "Invalid course id" });
 
-    const userId = req.user.userId;
-    const course = await Course.findById(id).select("createdBy");
+    // must exist
+    const course = await Course.findById(courseId).select("_id users");
     if (!course) return res.status(404).json({ message: "Course not found" });
+    // must be enrolled
+    const userId = req.user.userId;
+    const isEnrolled = course.users.some((u) => String(u) === String(userId));
+    if (!isEnrolled) return res.status(400).json({ message: "You are not enrolled in this course" });
+    
+    // remove user from course
+    await Course.updateOne(
+      { _id: courseId },
+      { $pull: { users: userId } }
+    );
 
-    if (String(course.createdBy) === String(userId)) {
-      return res.status(400).json({ message: "Creator cannot leave their own course" });
-    }
-
-    await removeUserFromCourse(userId, course._id);
-    return res.json({ message: "Left course" });
+    return res.json({ message: "Left course", courseId });
   } catch (err) {
     return res.status(500).json({ message: `Server error: ${err.message}` });
   }
