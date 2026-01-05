@@ -31,7 +31,7 @@ async function assertCourseAccess(courseId, userId) {
     return course;
 }
 
-// GET /api/messages/:courseId?limit=30&before=<ISO date>
+// GET /api/messages/:courseId?limit=40&before=<ISO date>
 router.get("/:courseId", authenticateToken, async (req, res) => {
     try {
       const { courseId } = req.params;
@@ -54,10 +54,9 @@ router.get("/:courseId", authenticateToken, async (req, res) => {
     }
 });
 
-// POST /api/messages/:courseId
+// POST /api/messages/:courseId, body: { type?: "text"|"image"|"file", content?: string, attachments?: [] }
 router.post("/:courseId", authenticateToken, async (req, res) => {
     try {
-        // body: { type?: "text"|"image"|"file", content?: string, attachments?: [] }
         const { courseId } = req.params;
         const userId = req.user.userId;
         await assertCourseAccess(courseId, userId);

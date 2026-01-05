@@ -1,68 +1,78 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Send, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
 import SearchCourse from './SearchCourse.jsx'
 
-const mockMessages = [
-  {
-    id: '1',
-    sender: 'Sarah Johnson',
-    avatar: 'SJ',
-    content: 'Hey everyone! Did anyone finish the calculus homework?',
-    timestamp: '10:30 AM',
-    isOwn: false,
-  },
-  {
-    id: '2',
-    sender: 'Mike Chen',
-    avatar: 'MC',
-    content: 'Yeah, just finished! Problem 5 was tough though 😅',
-    timestamp: '10:32 AM',
-    isOwn: false,
-  },
-  {
-    id: '3',
-    sender: 'You',
-    avatar: 'JD',
-    content: 'I struggled with that one too! Can we go over it together?',
-    timestamp: '10:33 AM',
-    isOwn: true,
-  },
-  {
-    id: '4',
-    sender: 'Emily Taylor',
-    avatar: 'ET',
-    content: 'I can help! Let\'s jump on a video call in Study Room 1?',
-    timestamp: '10:35 AM',
-    isOwn: false,
-  },
-  {
-    id: '5',
-    sender: 'Alex Rivera',
-    avatar: 'AR',
-    content: 'Perfect timing! I was about to ask about the exam next week. Anyone down for a group study session tomorrow?',
-    timestamp: '10:40 AM',
-    isOwn: false,
-  },
-  {
-    id: '6',
-    sender: 'You',
-    avatar: 'JD',
-    content: 'Sounds great! I\'m free after 3 PM',
-    timestamp: '10:42 AM',
-    isOwn: true,
-  },
-];
+import { getMessages, sendMessage } from "@/api/messageApi";
+import { markCourseRead } from "@/api/courseApi";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { useChatSocket } from "@/hooks/useChatSocket";
+import { useCourseRoom } from "@/hooks/useCourseRoom";
 
 export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
-  const [messages] = useState(mockMessages);
-  const [inputValue, setInputValue] = useState("");
+  const { user } = useAuth();
+  const myId = user?.userId || user?._id || user?.id;
 
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      // In a real app, this would send the message
-      setInputValue("");
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const courseId = useMemo(() => course?._id || course?.id, [course]);
+
+  // Socket Logic
+  const socketRef = useChatSocket(localStorage.getItem("accessToken"));
+  useCourseRoom({ socketRef, courseId, setMessages });
+
+  // Load messages whenever selected course changes
+  useEffect(() => {
+    let alive = true; // safety flag so if user changes courses, cancels the async request
+    async function load() {
+      if (!courseId) {
+        setMessages([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await getMessages(courseId, { limit: 40 });
+        if (!alive) return;
+        // backend returns newest first (because sort {createdAt:-1}), UI usually wants oldest -> newest
+        const list = Array.isArray(data?.messages) ? [...data.messages].reverse() : [];
+        setMessages(list);
+        // mark course as read when opened
+        await markCourseRead(courseId).catch(() => {});
+      } catch (err) {
+        // optional: show toast rather than alert
+        alert(err.message || "Failed to load messages");
+      } finally {
+        if (alive) setLoading(false);
+      }
     }
-  };
+    load();
+    return () => alive = false;
+  }, [courseId]);
+
+  // Auto-scroll when messages change
+  const bottomRef = useRef(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Handle when click send
+  async function handleSend() {
+    const text = inputValue.trim();
+    if (!text || !courseId || sending) return;
+    try {
+      setSending(true);
+      // send to backend; backend will emit socket event (single source of truth)
+      await sendMessage(courseId, { type: "text", content: text });
+      setInputValue(""); // clear input after success. 
+    } catch (err) {
+      console.error("Send failed:", err);
+      alert(err.message || "Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col bg-white">
@@ -72,12 +82,20 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
         onCreateClick={onCreateClick}
       />
 
-      <MessagesArea course={course} messages={messages} />
+      <MessagesArea 
+        course={course} 
+        messages={messages} 
+        loading={loading} 
+        bottomRef={bottomRef} 
+        myId={myId}
+      />
 
       <InputArea
         inputValue={inputValue}
         setInputValue={setInputValue}
         handleSend={handleSend}
+        sending={sending}
+        disabled={!courseId}
       />
     </div>
   );
@@ -114,84 +132,120 @@ function TopHeader({ course, onSelectCourse, onCreateClick }) {
   );
 }
 
-function MessagesArea({ course, messages }) {
+function MessagesArea({ course, messages, loading, bottomRef, myId }) {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-4">
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`flex gap-3 ${message.isOwn ? "flex-row-reverse" : ""}`}
-        >
-          {!message.isOwn && (
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white"
-              style={{ backgroundColor: course.color }}
-            >
-              <span className="text-sm">{message.avatar}</span>
-            </div>
-          )}
+      {loading && (
+        <div className="text-sm text-gray-500">Loading messages...</div>
+      )}
+      {!loading && messages.length === 0 && (
+        <div className="text-sm text-gray-500">No messages yet.</div>
+      )}
 
+      {messages.map((message) => {
+        const isOwn = String(message?.sender?._id) === String(myId);
+        const senderName = message?.sender?.name || "User";
+        const initials = senderName
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((w) => w[0].toUpperCase())
+          .join("");
+
+        return (
+          // wraps ONE full message row (avatar + message bubble)
           <div
-            className={`flex flex-col ${
-              message.isOwn ? "items-end" : "items-start"
-            } max-w-md`}
+            key={message._id || message.id}
+            className={`flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}
           >
-            {!message.isOwn && (
-              <span className="text-xs text-gray-600 mb-1 px-1">
-                {message.sender}
-              </span>
+            {/* AVATAR: Displays sender initials with course color */}
+            {!isOwn && (
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white"
+                style={{ backgroundColor: course?.color || "#8B5CF6" }}
+              >
+                <span className="text-sm">{initials || "U"}</span>
+              </div>
             )}
 
+            {/* MESSAGE COLUMN: Holds sender name, message bubble, and timestamp */}
             <div
-              className={`px-4 py-3 rounded-2xl ${
-                message.isOwn
-                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm"
-                  : "bg-gray-100 text-gray-900 rounded-bl-sm"
-              }`}
+              className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-md`}
             >
-              <p className="text-sm">{message.content}</p>
-            </div>
+              {!isOwn && (
+                <span className="text-xs text-gray-600 mb-1 px-1">
+                  {senderName}
+                </span>
+              )}
 
-            <span className="text-xs text-gray-400 mt-1 px-1">
-              {message.timestamp}
-            </span>
+              <div
+                className={`px-4 py-3 rounded-2xl ${
+                  isOwn
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm"
+                    : "bg-gray-100 text-gray-900 rounded-bl-sm"
+                }`}
+              >
+                <p className="text-sm">{message.content}</p>
+              </div>
+
+              <span className="text-xs text-gray-400 mt-1 px-1">
+                {new Date(message.createdAt).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })
+                }
+              </span>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+
+      <div ref={bottomRef} />
     </div>
   );
 }
 
-function InputArea({ inputValue, setInputValue, handleSend }) {
+function InputArea({ inputValue, setInputValue, handleSend, sending, disabled }) {
   return (
     <div className="border-t border-gray-300 p-4">
       <div className="flex items-end gap-3">
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          disabled={disabled || sending}
+        >
           <Paperclip className="w-5 h-5 text-gray-500" />
         </button>
 
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          disabled={disabled || sending}
+        >
           <ImageIcon className="w-5 h-5 text-gray-500" />
         </button>
 
         <div className="flex-1 bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
           <input
             type="text"
-            placeholder="Type a message..."
+            placeholder={disabled ? "Select a course to chat..." : "Type a message..."}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-500"
+            disabled={disabled || sending}
           />
 
-          <button className="hover:scale-110 transition-transform">
+          <button
+            className="hover:scale-110 transition-transform"
+            disabled={disabled || sending}
+          >
             <Smile className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         <button
           onClick={handleSend}
-          className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all"
+          disabled={disabled || sending || !inputValue.trim()}
+          className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-5 h-5" />
         </button>

@@ -7,7 +7,7 @@ export default function QuickActions({ course }) {
   };
 
   return (
-    <div className="w-80 bg-gradient-to-br from-purple-50 to-pink-50 border-l border-gray-200 p-6 overflow-y-auto">
+    <div className="w-80 bg-gradient-to-br from-purple-200 to-pink-100 border-l border-gray-200 p-6 overflow-y-auto">
       <h3 className="text-gray-900 mb-4">Quick Actions</h3>
 
       {/* Pop Quiz Card */}

@@ -17,7 +17,7 @@ module.exports = function setupSockets(server) {
         try {
           const token = socket.handshake.auth?.token;
           if (!token) return next(new Error("No token"));
-          const payload = jwt.verify(token, process.env.JWT_SECRET);
+          const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           socket.user = { id: payload.id };
           next();
         } catch {

@@ -9,6 +9,13 @@ const client = axios.create({
   },
 });
 
+// -------- Helpers --------
+function handleError(err) {
+  const data = err?.response?.data;
+  const msg = data?.error || data?.message || "Request failed";
+  throw new Error(msg);
+}
+
 // Attach token automatically
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
@@ -84,4 +91,5 @@ client.interceptors.response.use((res) => res, async (err) => {
   }
 );
 
+export { handleError };
 export default client;

@@ -1,13 +1,6 @@
-import client from "./client";
+import client, { handleError } from "./client";
 
-// -------- Helpers --------
-function handleError(err) {
-  const data = err?.response?.data;
-  const msg = data?.error || data?.message || "Request failed";
-  throw new Error(msg);
-}
 
-// -------- API calls --------
 export async function register(payload) {
   try {
     const res = await client.post("/api/auth/register", payload);

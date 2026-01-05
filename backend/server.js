@@ -13,7 +13,7 @@ const courseRoutes = require("./routes/courseRoutes");
 const messageRoutes = require("./routes/messageRoutes")
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
