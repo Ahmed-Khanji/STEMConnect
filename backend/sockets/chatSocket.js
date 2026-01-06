@@ -4,6 +4,30 @@ const Message = require("../models/Message");
 const Course = require("../models/Course");
 const jwt = require("jsonwebtoken");
 
+async function assertCourseAccess(courseId, userId) {
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      const err = new Error("Invalid courseId");
+      err.status = 400;
+      throw err;
+    }
+  
+    const course = await Course.findById(courseId).select("users");
+    if (!course) {
+      const err = new Error("Course not found");
+      err.status = 404;
+      throw err;
+    }
+  
+    const isEnrolled = course.users.some((u) => String(u) === String(userId));
+    if (!isEnrolled) {
+      const err = new Error("Not allowed in this course");
+      err.status = 403;
+      throw err;
+    }
+  
+    return course;
+}
+
 module.exports = function setupSockets(server) {
     const io = new Server(server, {
         cors: { 
@@ -18,7 +42,7 @@ module.exports = function setupSockets(server) {
           const token = socket.handshake.auth?.token;
           if (!token) return next(new Error("No token"));
           const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-          socket.user = { id: payload.id };
+          socket.user = { id: payload.userId };
           next();
         } catch {
           next(new Error("Unauthorized"));
@@ -28,11 +52,13 @@ module.exports = function setupSockets(server) {
     io.on("connection", (socket) => {
         // join a course room
         socket.on("joinCourse", async ({ courseId }) => {
-          if (!mongoose.Types.ObjectId.isValid(courseId)) {
-            return socket.emit("errorMessage", { error: "Invalid courseId" });
+          try {
+            await assertCourseAccess(courseId, socket.user.id);
+            socket.join(`course:${courseId}`); // add this socket to a room
+            socket.emit("joinedCourse", { courseId }); // send confirmation only to this user
+          } catch (err) {
+            socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
           }
-          socket.join(`course:${courseId}`); // add this socket to a room
-          socket.emit("joinedCourse", { courseId }); // send confirmation only to this user
         });
     
         socket.on("leaveCourse", ({ courseId }) => {
@@ -42,23 +68,25 @@ module.exports = function setupSockets(server) {
     
         socket.on("sendMessage", async ({ courseId, type = "text", content = "", attachments = [] }) => {
           try {
+            await assertCourseAccess(courseId, socket.user.id);
+            
             if (type === "text" && !String(content).trim()) {
-              return socket.emit("errorMessage", { error: "Message content required" });
+              return socket.emit("errorMessage", { error: "Message content required", status: 400 });
             }
+        
             const created = await Message.create({
               course: courseId,
-              sender: socket.user?.id,
+              sender: socket.user.id,
               type,
-              content,
-              attachments,
+              content: String(content),
+              attachments: Array.isArray(attachments) ? attachments : [],
             });
-            const populated = await Message.findById(created._id).populate(
-              "sender",
-              "name email"
-            );
+        
+            const populated = await Message.findById(created._id).populate("sender", "name email");
+        
             io.to(`course:${courseId}`).emit("newMessage", populated);
           } catch (err) {
-            socket.emit("errorMessage", { error: err.message });
+            socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
           }
         });
     });

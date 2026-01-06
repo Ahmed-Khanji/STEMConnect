@@ -20,10 +20,9 @@ export function useChatSocket(token) {
     });
     socketRef.current = socket;
 
-    // ---- Debug / lifecycle logs ----
+    // ---- Debug logs ----
     socket.on("connect", () => console.log("✅ socket connected:", socket.id));
-    socket.on("disconnect", (reason) => console.log("❌ socket disconnected:", reason));
-    socket.on("connect_error", (err) => console.warn("⚠️ socket connect_error:", err.message));
+    socket.on("errorMessage", (err) => console.warn("⚠️ socket connect_error:", err));
 
     // Cleanup on logout / unmount
     return () => {

@@ -4,17 +4,13 @@ import { markCourseRead } from "@/api/courseApi";
 export function useCourseRoom({ socket, courseId, setMessages }) {
   useEffect(() => {
     if (!socket || !courseId) return;
-    // Join the room for this course so server broadcasts reach you
+    // Join the room for this course
     socket.emit("joinCourse", { courseId });
 
+    // msg is the populated part that comes from backend io.to(`course:${courseId}`).emit("newMessage", populated);
     const onNewMessage = (msg) => {
-      // msg.course might be an id string OR a populated object
-      const msgCourseId =
-        typeof msg?.course === "object"
-          ? String(msg.course?._id || msg.course?.id)
-          : String(msg?.course);
       // Ignore messages for other courses
-      if (msgCourseId !== String(courseId)) return;
+      if (String(msg?.course) !== String(courseId)) return;
 
       // Append message once (dedupe by id to avoid duplicates)
       setMessages((prev) => {

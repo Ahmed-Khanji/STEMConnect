@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Send, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
 import SearchCourse from './SearchCourse.jsx'
 
-import { getMessages, sendMessage } from "@/api/messageApi";
+import { getMessages } from "@/api/messageApi";
 import { markCourseRead } from "@/api/courseApi";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useChatSocket } from "@/hooks/useChatSocket";
@@ -20,8 +20,8 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
   const courseId = useMemo(() => course?._id || course?.id, [course]);
 
   // Socket Logic
-  const socketRef = useChatSocket(localStorage.getItem("accessToken"));
-  useCourseRoom({ socketRef, courseId, setMessages });
+  const socket = useChatSocket(localStorage.getItem("accessToken"));
+  useCourseRoom({ socket, courseId, setMessages });
 
   // Load messages whenever selected course changes
   useEffect(() => {
@@ -60,18 +60,12 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
   // Handle when click send
   async function handleSend() {
     const text = inputValue.trim();
-    if (!text || !courseId || sending) return;
-    try {
-      setSending(true);
-      // send to backend; backend will emit socket event (single source of truth)
-      await sendMessage(courseId, { type: "text", content: text });
-      setInputValue(""); // clear input after success. 
-    } catch (err) {
-      console.error("Send failed:", err);
-      alert(err.message || "Failed to send message");
-    } finally {
-      setSending(false);
-    }
+    if (!text || !courseId || sending || !socket) return;
+  
+    setSending(true);
+    socket.emit("sendMessage", { courseId, type: "text", content: text });
+    setInputValue("");
+    setSending(false);
   }
 
   return (

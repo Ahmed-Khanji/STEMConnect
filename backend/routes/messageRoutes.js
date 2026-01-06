@@ -55,6 +55,7 @@ router.get("/:courseId", authenticateToken, async (req, res) => {
 });
 
 // POST /api/messages/:courseId, body: { type?: "text"|"image"|"file", content?: string, attachments?: [] }
+/*
 router.post("/:courseId", authenticateToken, async (req, res) => {
     try {
         const { courseId } = req.params;
@@ -85,5 +86,6 @@ router.post("/:courseId", authenticateToken, async (req, res) => {
       res.status(err.status || 500).json({ error: err.message || "Failed to send message" });
     }
 });
+*/
 
 module.exports = router;
