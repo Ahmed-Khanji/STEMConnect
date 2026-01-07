@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { Send, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
+
 import SearchCourse from './SearchCourse.jsx'
 
 import { getMessages } from "@/api/messageApi";
@@ -22,6 +23,72 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
   // Socket Logic
   const socket = useChatSocket(localStorage.getItem("accessToken"));
   useCourseRoom({ socket, courseId, setMessages });
+
+  // Scroll refs
+  const scrollRef = useRef(null);      // the scrollable MessagesArea div
+  const bottomRef = useRef(null);      // the bottom anchor
+  const prevLenRef = useRef(0);        // previous messages length
+  const prevCourseIdRef = useRef(courseId); // previous course
+
+  // When switching courses: reset tracking of scroll Refs and clear messages
+  useLayoutEffect(() => {
+    if (prevCourseIdRef.current !== courseId) {
+      prevLenRef.current = 0;
+      prevCourseIdRef.current = courseId;
+
+      setMessages([]);
+      setInputValue("");
+
+      const container = scrollRef.current;
+      if (container) container.scrollTop = 0;
+    }
+  }, [courseId]);
+
+  // Scroll behavior (runs BEFORE paint => no visible jump)
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const prevLen = prevLenRef.current;
+    const nextLen = messages.length;
+    const isInitialLoad = prevLen === 0 && nextLen > 0;
+    const isNewMessage = prevLen > 0 && nextLen > prevLen;
+
+    const hasOverflow = container.scrollHeight > container.clientHeight;
+    if (isInitialLoad) {
+      if (hasOverflow) container.scrollTop = container.scrollHeight;
+      else container.scrollTop = 0; // Explicitly keep at top when no overflow to prevent browser auto-scroll
+    } 
+    else if (isNewMessage) {
+      if (hasOverflow) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    
+    prevLenRef.current = nextLen;
+  }, [messages, courseId]);
+
+  // Double-check after paint to prevent browser from auto-scrolling when no overflow
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      const container = scrollRef.current;
+      if (!container) return;
+      
+      // Use multiple checks to catch any browser auto-scroll
+      const checkAndReset = () => {
+        const hasOverflow = container.scrollHeight > container.clientHeight;
+        if (!hasOverflow && container.scrollTop !== 0) {
+          // If no overflow but scrolled away from top, reset to top
+          container.scrollTop = 0;
+        }
+      };
+      
+      // Check immediately
+      checkAndReset();
+      // Check after next frame
+      requestAnimationFrame(checkAndReset);
+      // Check after a small delay to catch any late scroll
+      setTimeout(checkAndReset, 10);
+    }
+  }, [loading, messages.length]);
 
   // Load messages whenever selected course changes
   useEffect(() => {
@@ -52,10 +119,15 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
   }, [courseId]);
 
   // Auto-scroll when messages change
-  const bottomRef = useRef(null);
+  
+  // Reset message length tracking when course changes
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (prevCourseIdRef.current !== courseId) {
+      prevLenRef.current = 0;
+      prevCourseIdRef.current = courseId;
+    }
+  }, [courseId]);
+  
 
   // Handle when click send
   async function handleSend() {
@@ -80,6 +152,7 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
         course={course} 
         messages={messages} 
         loading={loading} 
+        scrollRef={scrollRef}
         bottomRef={bottomRef} 
         myId={myId}
       />
@@ -97,7 +170,7 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
 
 function TopHeader({ course, onSelectCourse, onCreateClick }) {
   return (
-    <div className="border-b border-gray-300 rounded-lg px-6 py-3 overflow-visible relative z-40">
+    <div className="border-b border-gray-200 rounded-lg px-6 py-3 overflow-visible relative z-40">
       <div className="flex items-center gap-20 py-1 overflow-visible">
         {/* Left: Course Title */}
         <div className="w-[240px] flex-shrink-0">
@@ -126,14 +199,24 @@ function TopHeader({ course, onSelectCourse, onCreateClick }) {
   );
 }
 
-function MessagesArea({ course, messages, loading, bottomRef, myId }) {
+function MessagesArea({ course, messages, loading, scrollRef, bottomRef, myId }) {
+  const canScroll = !loading && messages.length > 0;
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+    <div
+      ref={scrollRef}
+      className={`flex-1 p-6 space-y-4 transition-opacity ${
+        loading ? "opacity-0 overflow-hidden" : "opacity-100 overflow-y-auto"
+      }`}
+    >
       {loading && (
-        <div className="text-sm text-gray-500">Loading messages...</div>
+        <div className="h-full flex items-center justify-center text-sm text-gray-500">
+          Loading messages...
+        </div>
       )}
       {!loading && messages.length === 0 && (
-        <div className="text-sm text-gray-500">No messages yet.</div>
+        <div className="h-full flex items-center justify-center text-sm text-gray-500">
+          No messages yet.
+        </div>
       )}
 
       {messages.map((message) => {
@@ -164,7 +247,7 @@ function MessagesArea({ course, messages, loading, bottomRef, myId }) {
 
             {/* MESSAGE COLUMN: Holds sender name, message bubble, and timestamp */}
             <div
-              className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-md`}
+              className={`flex flex-col ${isOwn ? "items-end pr-4" : "items-start"} max-w-md`}
             >
               {!isOwn && (
                 <span className="text-xs text-gray-600 mb-1 px-1">

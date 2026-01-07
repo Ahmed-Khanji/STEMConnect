@@ -42,7 +42,7 @@ export default function Login({ onSwitchToRegister }) {
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
 
-      setTimeout(() => {}, 3000); // code to run after 3 seconds
+      await new Promise(resolve => setTimeout(resolve, 3000)); // wait 3 seconds
       navigate("/");
     } catch (err) {
       const msg = err?.message || "Login failed";

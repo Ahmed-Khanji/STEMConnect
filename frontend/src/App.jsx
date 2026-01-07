@@ -4,10 +4,12 @@ import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
 import Auth from './pages/Auth.jsx';
 import Course from './pages/Course.jsx';
+import Quiz from "./pages/Quiz.jsx";
 import Test from './pages/Test.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
+  const courseId = null;
 
   return (
     <div>
@@ -16,8 +18,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
-        {/* 
-        <Route path="/courses/:id/room" element={<ProtectedRoute><CourseRoom /></ProtectedRoute>} />
+        <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+        {/*
         <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProtectedRoute><ProjectSpace /></ProtectedRoute>} />

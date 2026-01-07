@@ -8,6 +8,14 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
+@layer utilities {
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+  }
+}
 
 @layer base {
   :root {
@@ -64,7 +72,6 @@ body {
         --chart-5: 340 75% 55%;
     }
 }
-
 
 
 @layer base {

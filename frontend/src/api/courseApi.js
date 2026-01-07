@@ -30,6 +30,16 @@ export async function getMyCourses() {
     }
 }
 
+// GET /api/courses/:id
+export async function getCourseById(courseId) {
+  try {
+    const res = await client.get(`/api/courses/${courseId}`);
+    return res.data.course;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
 export async function joinCourseByCode(code) {
   try {
     const res = await client.post("/api/courses/join-by-code", {

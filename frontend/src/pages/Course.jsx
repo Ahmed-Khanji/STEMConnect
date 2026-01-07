@@ -8,6 +8,7 @@ import CreateCourseModal from "../components/Course/CreateCourseModal";
 
 import { getMyCourses, leaveCourse } from "../api/courseApi";
 
+import { Menu, X } from "lucide-react";
 
 export default function Course() {
   const [courses, setCourses] = useState([]);
@@ -16,6 +17,8 @@ export default function Course() {
 
   // modal open
   const [createOpen, setCreateOpen] = useState(false);
+  // Quick Actions open
+  const [quickOpen, setQuickOpen] = useState(true);
 
   useEffect(() => {
     async function loadCourses() {
@@ -102,13 +105,33 @@ export default function Course() {
         onDropCourse={handleDropCourse}
       />
 
-      <div className="flex flex-1">
+      <div className="relative flex flex-1 min-w-0">
         <ChatArea
           course={selectedCourse}
           onSelectCourse={handleSelectCourse}
           onCreateClick={() => setCreateOpen(true)}
         />
-        <QuickActions course={selectedCourse} />
+
+        {/* Toggle button (hamburger) */}
+        <button
+          type="button"
+          onClick={() => setQuickOpen(v => !v)}
+          className="absolute top-4 right-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition"
+          aria-label={quickOpen ? "Hide quick actions" : "Show quick actions"}
+        >
+          {quickOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
+        {/* Animated QuickActions container (keep mounted for smooth transitions) */}
+        <div
+          className={`h-full overflow-hidden border-l border-gray-200 transition-all duration-300 ease-in-out
+            ${quickOpen 
+              ? "max-w-[20rem] opacity-100 translate-x-0" 
+              : "max-w-0 opacity-0 pointer-events-none"}
+          `}
+        >
+          <QuickActions course={selectedCourse} />
+        </div>
       </div>
 
       <CreateCourseModal
