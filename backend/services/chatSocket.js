@@ -19,7 +19,7 @@ async function assertCourseAccess(courseId, userId) {
     }
   
     const isEnrolled = course.users.some((u) => String(u) === String(userId));
-    if (!isEnrolled) {
+    if (!isEnrolled) { 
       const err = new Error("Not allowed in this course");
       err.status = 403;
       throw err;

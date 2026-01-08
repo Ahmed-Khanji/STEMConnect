@@ -4,9 +4,8 @@ import { Link } from "react-router-dom";
 
 // Single reusable card
 function FeatureCard({ title, desc, img, href }) {
-  const Wrapper = href ? Link : "div"; // will be a link if href provided
   return (
-    <Wrapper
+    <Link
       to={href}
       className={`relative flex-none w-full md:w-[420px] lg:w-[460px] h-48 md:px-0 rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition hover:scale-[1.03] duration-300 ease-in-out cursor-pointer`}
       aria-label={title}
@@ -23,7 +22,7 @@ function FeatureCard({ title, desc, img, href }) {
         <h3 className="text-lg font-bold drop-shadow">{title}</h3>
         {desc && <p className="text-sm opacity-90">{desc}</p>}
       </div>
-    </Wrapper>
+    </Link>
   );
 }
 

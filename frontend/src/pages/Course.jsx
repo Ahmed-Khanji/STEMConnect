@@ -19,6 +19,8 @@ export default function Course() {
   const [createOpen, setCreateOpen] = useState(false);
   // Quick Actions open
   const [quickOpen, setQuickOpen] = useState(true);
+  // Course List open (later)
+  const [listOpen, setListOpen] = useState(true);
 
   useEffect(() => {
     async function loadCourses() {
@@ -97,15 +99,35 @@ export default function Course() {
   }
 
   return (
-    <div className="flex h-screen">
-      <CourseList
-        courses={courses}
-        selectedCourse={selectedCourse}
-        onSelectCourse={setSelectedCourse}
-        onDropCourse={handleDropCourse}
-      />
+    <div className="relative flex h-screen">
+      {/* floating menu button when the course list is hidden */}
+      {!listOpen && (
+        <button
+          type="button"
+          onClick={() => setListOpen(true)}
+          className="absolute top-4 left-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition"
+          aria-label="Show course list"
+        >
+          <Menu size={20} />
+        </button>
+      )}
 
-      <div className="relative flex flex-1 min-w-0">
+      <div
+        className={`h-full shrink-0 overflow-hidden border-r border-white/30 transition-all duration-300 ease-in-out
+          ${listOpen ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"}
+        `}
+      >
+        <CourseList
+          courses={courses}
+          selectedCourse={selectedCourse}
+          onSelectCourse={setSelectedCourse}
+          onDropCourse={handleDropCourse}
+          listOpen={listOpen} // later
+          onToggleList={() => setListOpen(v => !v)}
+        />
+      </div>
+
+      <div className={`relative flex flex-1 min-w-0 ${!listOpen ? "pl-14" : ""}`}>
         <ChatArea
           course={selectedCourse}
           onSelectCourse={handleSelectCourse}

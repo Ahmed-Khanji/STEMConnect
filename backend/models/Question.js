@@ -6,7 +6,13 @@ const questionSchema = new mongoose.Schema(
     question: { type: String, required: true, trim: true },
     type: { type: String, enum: ["mcq", "short"], required: true, index: true },
     explanation: { type: String, required: true, trim: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, index: true },
+    createdByType: { type: String, enum: ["human", "ai"], required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", 
+      required:  function () {
+        return this.createdByType === "human";
+      }
+    },
     // ===== MCQ fields =====
     options: {
       type: [String],

@@ -5,12 +5,12 @@ const cors = require('cors');
 const passport = require("passport");
 const http = require("http");
 
-const setupSockets = require("./sockets/chatSocket");
+const setupSockets = require("./services/chatSocket");
 const userRoutes = require("./routes/userRoutes");
 const { authRoutes, authenticateToken } = require("./routes/authRoutes");
 const authGoogleRoutes = require("./routes/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
-const messageRoutes = require("./routes/messageRoutes")
+const messageRoutes = require("./routes/messageRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
-import { Send, Smile, Paperclip, Image as ImageIcon } from 'lucide-react';
+import { Send, Smile, Paperclip, Image as ImageIcon, Sun, Moon, Plus } from 'lucide-react';
 
 import SearchCourse from './SearchCourse.jsx'
 
 import { getMessages } from "@/api/messageApi";
 import { markCourseRead } from "@/api/courseApi";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useTheme } from "@/context/ThemeContext";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { useCourseRoom } from "@/hooks/useCourseRoom";
 
@@ -117,8 +118,6 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
     load();
     return () => alive = false;
   }, [courseId]);
-
-  // Auto-scroll when messages change
   
   // Reset message length tracking when course changes
   useEffect(() => {
@@ -169,6 +168,8 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
 }
 
 function TopHeader({ course, onSelectCourse, onCreateClick }) {
+  const { isDark, toggleTheme } = useTheme();
+  
   return (
     <div className="border-b border-gray-200 rounded-lg px-6 py-3 overflow-visible relative z-40">
       <div className="flex items-center gap-20 py-1 overflow-visible">

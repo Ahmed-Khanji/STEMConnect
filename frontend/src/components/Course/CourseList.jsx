@@ -1,12 +1,12 @@
-import { GraduationCap, BookOpenCheck } from "lucide-react";
+import { GraduationCap, BookOpenCheck, Menu, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { useAuth } from "@/context/AuthContext";
 
 /* ---------- Main Component ---------- */
-export default function CourseList({courses, selectedCourse, onSelectCourse, onDropCourse}) {
+export default function CourseList({ courses, selectedCourse, onSelectCourse, onDropCourse, listOpen, onToggleList }) {
   return (
-    <div className="w-80 flex flex-col bg-gradient-to-br from-purple-300 to-blue-300 border-r border-white/30">
-      <Header />
+    <div className="h-full w-full flex flex-col bg-gradient-to-br from-purple-300 to-blue-300 border-r border-white/30">
+      <Header listOpen={listOpen} onToggleList={onToggleList} />
 
       <Courses
         courses={courses}
@@ -63,17 +63,31 @@ function getDisplayName(user) {
 }
 
 /* ---------- Sections ---------- */
-function Header() {
+function Header({ listOpen, onToggleList }) {
   return (
     <div className="p-6">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-          <GraduationCap className="w-6 h-6 text-white" />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+            <GraduationCap className="w-6 h-6 text-white" />
+          </div>
+
+          <div>
+            <h2 className="text-gray-900">Courses</h2>
+            <p className="text-xs text-gray-500">{getCurrentSemester()}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-gray-900">Courses</h2>
-          <p className="text-xs text-gray-500">{getCurrentSemester()}</p>
-        </div>
+
+        {/* Toggle (collapse list) later */}
+        {/* <button
+          type="button"
+          onClick={onToggleList}
+          className="rounded-xl bg-white/60 p-2 shadow-sm hover:bg-white/80 transition"
+          aria-label={listOpen ? "Hide course list" : "Show course list"}
+          title={listOpen ? "Hide" : "Show"}
+        >
+          {listOpen ? <X size={18} /> : <Menu size={18} />}
+        </button> */}
       </div>
     </div>
   );
