@@ -9,6 +9,7 @@ const { generateQuizQuestions, validateQuestion } = require('../services/geminiS
 
 const router = express.Router();
 
+// normalize: "Hello,   World!!!" → "hello world"
 function normalizeText(str) {
     return String(str)
       .toLowerCase()
@@ -22,7 +23,7 @@ function normalizeText(str) {
 // Auto-reject or flag, No correct answer, Too short / too vague (“what is this?”), Duplicates (same question wording), Off-topic tags
 
 // Create a new quiz for a course (only if course has enough questions)
-router.post("/courses/:courseId/quizzes", async (req, res) => {
+router.post("/:courseId", async (req, res) => {
     try {
         const { courseId } = req.params;
         const { topic, questionCount = 10, durationSeconds = 300 } = req.body;
@@ -39,7 +40,7 @@ router.post("/courses/:courseId/quizzes", async (req, res) => {
         // fetch questions (only human made) and validate if its enough
         const candidates = await Question.find({ course: courseId, createdByType: "human" }).lean();
         if (candidates.length < qc) {
-            return res.status(400).json({
+            return res.status(422).json({
                 message: "Not enough HUMAN questions available",
                 required: qc,
                 found: candidates.length,
@@ -57,19 +58,30 @@ router.post("/courses/:courseId/quizzes", async (req, res) => {
         const existingSet = new Set(existingQuestions.map(q => normalizeText(q.question)));
         
         // Save AI questions after filtering duplicates
-        const aiDocs = generated.questions
-            .filter(q => {
-                const normalized = normalizeText(q.question);
-                return !existingSet.has(normalized);
-            })
-            .map(q => ({
+        const aiDocs = [];
+        for (const q of generated.questions || []) {
+            const normalized = normalizeText(q.question);
+            if (!normalized) continue;
+            if (existingSet.has(normalized)) continue;
+
+            existingSet.add(normalized); // <-- prevents within-batch duplicates too
+
+            aiDocs.push({
                 ...q,
                 course: courseId,
                 createdByType: "ai",
-            }));
-            
-        const saved = await Question.insertMany(aiDocs, { ordered: true });
-        const savedIds = saved.map(d => d._id);
+            });
+        }
+
+        if (aiDocs.length < qc) {
+            return res.status(422).json({
+                message: "Not enough UNIQUE questions generated",
+                required: qc,
+                generatedUnique: aiDocs.length,
+            });
+        }
+        
+        const saved = await Question.insertMany(aiDocs.slice(0, qc), { ordered: true });
 
         // Create Quiz that stores IDs
         const quiz = await Quiz.create({
@@ -77,13 +89,29 @@ router.post("/courses/:courseId/quizzes", async (req, res) => {
             topic: cleanTopic,
             questionCount: qc,
             durationSeconds: dur,
-            questions: savedIds, // store ids
+            questions: saved,
             meta: generated.meta,
           });
         return res.status(201).json(quiz);
     } 
     catch (err) {
         return res.status(500).json({ message: `Server error creating quiz: ${err.message}` });
+    }
+});
+
+// Get latest quiz for a course (or 404 if none)
+router.get("/:courseId", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(courseId)) return res.status(400).json({ message: "Invalid courseId" });
+  
+      // latest by createdAt
+      const quiz = await Quiz.findOne({ course: courseId }).sort({ createdAt: -1 }).lean();
+      if (!quiz) return res.status(404).json({ message: "No quiz found for this course" });
+      
+      return res.status(200).json(quiz);
+    } catch (err) {
+      return res.status(500).json({ message: `Server error fetching quiz: ${err.message}` });
     }
 });
 

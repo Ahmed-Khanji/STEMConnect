@@ -2,16 +2,18 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { getCourseById } from "@/api/courseApi";
+import { getLatestQuiz, createQuiz } from "@/api/quizApi";
 
 import StartScreen from "@/components/Quiz/StartScreen";
 import QuizScreen from "@/components/Quiz/QuizScreen";
 import ResultScreen from "@/components/Quiz/ResultScreen";
-// import { generateQuizQuestions } from "@/services/geminiService"; // to be studied
+import ContributionScreen from "@/components/Quiz/ContributionScreen";
 
 export default function Quiz() {
-  const [view, setView] = useState("landing");
+  const [view, setView] = useState("landing"); // "loading", "quiz", "result", "contribution"
   const [questions, setQuestions] = useState([]);
   const [finalScore, setFinalScore] = useState(0);
+  const [needContribution, setNeedContribution] = useState(false);
 
   const { isDark, toggleTheme } = useTheme();
 
@@ -21,9 +23,10 @@ export default function Quiz() {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // load selected course data
   useEffect(() => {
     if (!courseId) return;
-
+    
     async function loadCourse() {
       try {
         setLoading(true);
@@ -40,25 +43,55 @@ export default function Quiz() {
     loadCourse();
   }, [courseId, navigate]);
 
+  // Starts the quiz flow: try get latest quiz, otherwise create, otherwise redirect to contribution
   async function startQuiz() {
-    setView("loading");
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setView("quiz");
+    if (!courseId) return;
+    if (!course) return; // course still loading or missing
 
-    /*
+    setView("loading");
     try {
-      const qs = await generateQuizQuestions(
-        "Object-Oriented Programming I (Inheritance and Polymorphism)",
-        10
-      );
-      setQuestions(qs || []);
+      // try fetch latest quiz
+      const existing = await getLatestQuiz(courseId);
+      const qs = Array.isArray(existing?.questions) ? existing.questions : [];
+      setQuestions(qs);
       setView("quiz");
-    } catch (err) {
-      console.error(err);
+      return;
+    }
+    catch (err) {
+      const status = err?.response?.status;
+      // 404 = no quiz yet → create one
+      if (status !== 404) {
+        alert("Could not load quiz. Please try again.");
+        setView("landing");
+        return;
+      }
+    }
+
+    // create quiz if none exists
+    try {
+      // TODO: you can decide these values from UI later
+      const topic = "General";
+      const questionCount = 10;
+      const durationSeconds = 300;
+
+      const created = await createQuiz(courseId, { topic, questionCount, durationSeconds });
+      const qs = Array.isArray(created?.questions) ? created.questions : [];
+      setQuestions(qs);
+      setView("quiz");
+    } 
+    catch (err) {
+      const status = err?.response?.status;
+      // 422 = not enough questions → send to contribution
+      if (status === 422) {
+        setNeedContribution(true);
+        setView("contribution");
+        return;
+      }
+      alert("Could not create quiz. Please try again.");
       setView("landing");
     }
-    */
   }
+
 
   function handleComplete(score) {
     setFinalScore(score);
@@ -112,6 +145,19 @@ export default function Quiz() {
           total={questions.length}
           onRestart={resetQuiz}
         />
+      )}
+
+      {view === 'contribution' && (
+        <ContributionScreen
+          course={course}
+          isDarkMode={isDark}
+          toggleDarkMode={toggleTheme}
+          onBack={() => {
+            setNeedContribution(false);
+            setView("landing");
+          }}
+          needContribution={needContribution}
+      />
       )}
     </div>
   );

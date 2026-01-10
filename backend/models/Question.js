@@ -4,7 +4,7 @@ const questionSchema = new mongoose.Schema(
   {
     topic: { type: String, required: true, trim: true, index: true },
     question: { type: String, required: true, trim: true },
-    type: { type: String, enum: ["mcq", "short"], required: true, index: true },
+    type: { type: String, enum: ["mcq", "short_answer"], required: true, index: true },
     explanation: { type: String, required: true, trim: true },
     course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, index: true },
     createdByType: { type: String, enum: ["human", "ai"], required: true },

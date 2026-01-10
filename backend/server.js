@@ -11,6 +11,7 @@ const { authRoutes, authenticateToken } = require("./routes/authRoutes");
 const authGoogleRoutes = require("./routes/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const quizRoutes = require("./routes/quizRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,11 +23,12 @@ app.use(passport.initialize());
 
 // Routes
 app.get('/', (req, res) => { res.send('APUI is running...'); });
-app.use("/api/users", authenticateToken, userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/auth", authGoogleRoutes);
-app.use("/api/courses", courseRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/users", authenticateToken, userRoutes);
+app.use("/api/courses", authenticateToken, courseRoutes);
+app.use("/api/messages", authenticateToken, messageRoutes);
+app.use("/api/quiz", authenticateToken, quizRoutes);
 
 // Socket
 const server = http.createServer(app);
