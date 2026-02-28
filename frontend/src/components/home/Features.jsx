@@ -28,24 +28,25 @@ function FeatureCard({ title, desc, img, href }) {
 
 export default function Features() {
   const { t } = useTranslation();
+  const tfeat = (key) => t(`Home.features.${key}`);
 
   // Content lives here (easy to add/remove)
   const cards = [
     {
-      title: t("features.learn"),
-      desc: t("features.learn_desc"),
+      title: tfeat("learn"),
+      desc: tfeat("learn_desc"),
       img: "/learn.jpg",
       href: "/courses",
     },
     {
-      title: t("features.projects"),
-      desc: t("features.projects_desc"),
+      title: tfeat("projects"),
+      desc: tfeat("projects_desc"),
       img: "projects.avif",
       href: "/projects",
     },
     {
-      title: t("features.tournaments"),
-      desc: t("features.tournaments_desc"),
+      title: tfeat("tournaments"),
+      desc: tfeat("tournaments_desc"),
       img: "tournaments.jpg",
       href: "/tournaments",
     },
@@ -54,7 +55,7 @@ export default function Features() {
   return (
     <section className="w-full max-w-8xl mx-auto py-10">
       <h2 className="text-3xl font-bold text-center mb-8 text-foreground">
-        {t("features.title")}
+        {tfeat("title")}
       </h2>
 
       {/* Layout rules:

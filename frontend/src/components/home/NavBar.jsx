@@ -17,6 +17,7 @@ function getInitials(user) {
 
 function NavBar({ scrolled = false}) {
   const { t } = useTranslation();
+  const tnav = (key) => t(`Home.nav.${key}`);
   const { user, loading, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
@@ -65,7 +66,7 @@ function NavBar({ scrolled = false}) {
                     i18n.changeLanguage("en");
                   }}
                 >
-                  English
+                  {tnav("language.en")}
                 </button>
                 <button
                   className="block w-full text-left px-3 py-2 hover:bg-accent rounded-b-md"
@@ -74,7 +75,7 @@ function NavBar({ scrolled = false}) {
                     i18n.changeLanguage("fr");
                   }}
                 >
-                  Français
+                  {tnav("language.fr")}
                 </button>
               </div>
             )}
@@ -116,12 +117,12 @@ function NavBar({ scrolled = false}) {
                   onClick={logout}
                   className="px-3 py-2 hover:text-muted-foreground transition-colors"
                 >
-                  Logout
+                  {tnav("logout")}
                 </button>
               </div>
             ) : (
               <Link to="/auth" className="inline-block hover:text-muted-foreground transition-colors">
-                {t("nav.auth")}
+                {tnav("auth")}
               </Link>
             )}
           </div>

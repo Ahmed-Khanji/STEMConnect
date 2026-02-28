@@ -1,0 +1,62 @@
+{
+  "Home": {
+    "nav": {
+      "auth": "Login / Register",
+      "logout": "Logout",
+      "language": {
+        "en": "English",
+        "fr": "Français"
+      }
+    },
+    "hero": {
+      "title": "Connect, Collaborate, Create.",
+      "paragraph": "Join study rooms, build projects, and compete in tournaments to learn, grow, and achieve more with students who share your passion.",
+      "GetStarted": "Get Started!"
+    },
+    "stats": {
+      "secure": "Secure",
+      "secure_desc": "Private and secure rooms for study and projects.",
+      "impact": "Impact",
+      "impact_desc": "We've supported 20+ students on their learning journey.",
+      "robust": "Robust",
+      "robust_desc": "Rich resources and tools to enhance your experience."
+    },
+    "features": {
+      "title": "Key Features",
+      "learn": "Learn Together",
+      "learn_desc": "Join virtual study rooms to collaborate with peers, share resources, and tackle challenges together.",
+      "projects": "Collaborative Projects",
+      "projects_desc": "Build real world projects with fellow students and start a team.",
+      "tournaments": "Competitive Tournaments",
+      "tournaments_desc": "Participate in coding and developer tournaments to test your skills."
+    },
+    "footer": {
+      "tagline": "Connect • Collaborate • Create",
+      "rights": "All rights reserved.",
+      "explore": {
+        "title": "Explore",
+        "courses": "Courses",
+        "projects": "Projects",
+        "quizzes": "Quizzes",
+        "exams": "Sample Exams",
+        "notes": "Notes",
+        "tournaments": "Tournaments"
+      },
+      "support": {
+        "title": "Support",
+        "safety": "Safety & Moderation",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Use",
+        "contact": "Contact"
+      },
+      "universities": {
+        "title": "Universities in Canada",
+        "concordia": "Concordia University",
+        "mcgill": "McGill University",
+        "umontreal": "Université de Montréal",
+        "laval": "Université Laval",
+        "toronto": "University of Toronto"
+      }
+    }
+  }
+}

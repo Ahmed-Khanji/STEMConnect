@@ -15,7 +15,7 @@ i18n
       escapeValue: false,
     },
     backend: {
-      loadPath: "/locales/{{lng}}/translation.json", // Change path if you're using custom structure like /locales/translationEN.json
+      loadPath: "/translations/{{lng}}.json",
     },
     react: { useSuspense: false }
   });

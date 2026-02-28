@@ -4,44 +4,45 @@ import { useTranslation } from "react-i18next";
 /* ---------- Main Component ---------- */
 export default function Footer() {
   const { t } = useTranslation();
+  const tfoot = (key) => t(`Home.footer.${key}`);
 
   const explore = {
-    title: t("footer.explore.title", "Explore"),
+    title: tfoot("explore.title"),
     links: [
-      { label: t("footer.explore.courses", "Courses"), href: "/courses" },
-      { label: t("footer.explore.projects", "Projects"), href: "/projects" },
-      { label: t("footer.explore.quizzes", "Quizzes"), href: "/quizzes" },
-      { label: t("footer.explore.exams", "Sample Exams"), href: "/exams" },
-      { label: t("footer.explore.notes", "Notes"), href: "/notes" },
-      { label: t("footer.explore.tournaments", "Tournaments"), href: "/tournaments" },
+      { label: tfoot("explore.courses"), href: "/courses" },
+      { label: tfoot("explore.projects"), href: "/projects" },
+      { label: tfoot("explore.quizzes"), href: "/quizzes" },
+      { label: tfoot("explore.exams"), href: "/exams" },
+      { label: tfoot("explore.notes"), href: "/notes" },
+      { label: tfoot("explore.tournaments"), href: "/tournaments" },
     ],
   };
 
   const support = {
-    title: t("footer.support.title", "Support"),
+    title: tfoot("support.title"),
     links: [
-      { label: t("footer.support.safety", "Safety & Moderation"), href: "/safety" },
-      { label: t("footer.support.privacy", "Privacy Policy"), href: "/privacy" },
-      { label: t("footer.support.terms", "Terms of Use"), href: "/terms" },
-      { label: t("footer.support.contact", "Contact"), href: "/contact" },
+      { label: tfoot("support.safety"), href: "/safety" },
+      { label: tfoot("support.privacy"), href: "/privacy" },
+      { label: tfoot("support.terms"), href: "/terms" },
+      { label: tfoot("support.contact"), href: "/contact" },
     ],
   };
 
   const universities = {
-    title: t("footer.universities.title", "Universities in Canada"),
+    title: tfoot("universities.title"),
     links: [
-      { label: t("footer.universities.concordia", "Concordia University"), href: "#" },
-      { label: t("footer.universities.mcgill", "McGill University"), href: "#" },
-      { label: t("footer.universities.umontreal", "Université de Montréal"), href: "#" },
-      { label: t("footer.universities.laval", "Université Laval"), href: "#" },
-      { label: t("footer.universities.toronto", "University of Toronto"), href: "#" },
+      { label: tfoot("universities.concordia"), href: "https://www.concordia.ca/" },
+      { label: tfoot("universities.mcgill"), href: "https://www.mcgill.ca/" },
+      { label: tfoot("universities.umontreal"), href: "https://www.umontreal.ca/" },
+      { label: tfoot("universities.laval"), href: "https://www.ulaval.ca/" },
+      { label: tfoot("universities.toronto"), href: "https://www.utoronto.ca/" },
     ],
   };
 
   return (
     <footer className="bg-footer text-footer-foreground">
       <div className="mx-auto max-w-7xl pl-6 pr-4 md:pl-10 md:pr-6 lg:pl-16 lg:pr-8 py-12">
-        <TopBrandRow t={t} />
+        <TopBrandRow tfoot={tfoot} />
 
         <FooterColumns
           explore={explore}
@@ -49,7 +50,7 @@ export default function Footer() {
           universities={universities}
         />
 
-        <BottomLine t={t} year={getYear()} />
+        <BottomLine tfoot={tfoot} year={getYear()} />
       </div>
     </footer>
   );
@@ -60,7 +61,7 @@ const getYear = () => new Date().getFullYear();
 
 
 /* ---------- Sections ---------- */
-function TopBrandRow({ t }) {
+function TopBrandRow({ tfoot }) {
   return (
     <div className="flex items-center justify-between pb-8 border-b border-footer-border">
       <div className="flex items-center gap-3">
@@ -69,7 +70,7 @@ function TopBrandRow({ t }) {
       </div>
 
       <p className="text-xs text-footer-muted">
-        {t("footer.tagline", "Connect • Collaborate • Create")}
+        {tfoot("tagline")}
       </p>
     </div>
   );
@@ -93,26 +94,30 @@ function FooterCol({ title, links = [] }) {
       </h3>
 
       <ul className="mt-4 space-y-3">
-        {links.map((l, i) => (
-          <li key={i}>
-            <a
-              href={l.href || "#"}
-              className="text-sm text-footer-foreground hover:text-footer-muted transition-colors"
-            >
-              {l.label}
-            </a>
-          </li>
-        ))}
+        {links.map((l, i) => {
+          const isExternal = (l.href || "").startsWith("http");
+          return (
+            <li key={i}>
+              <a
+                href={l.href || "#"}
+                className="text-sm text-footer-foreground hover:text-footer-muted transition-colors"
+                {...(isExternal && { target: "_blank", rel: "noreferrer noopener" })}
+              >
+                {l.label}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
 }
 
-function BottomLine({ t, year }) {
+function BottomLine({ tfoot, year }) {
   return (
     <div className="mt-10 border-t border-footer-border pt-6 text-xs text-footer-muted flex flex-col sm:flex-row items-center justify-between gap-2">
       <p>
-        © {year} STEMConnect. {t("footer.rights", "All rights reserved.")}
+        © {year} STEMConnect. {tfoot("rights")}
       </p>
 
       <SocialLinks />

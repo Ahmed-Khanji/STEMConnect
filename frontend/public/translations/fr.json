@@ -1,0 +1,62 @@
+{
+  "Home": {
+    "nav": {
+      "auth": "Connexion / Inscription",
+      "logout": "Déconnexion",
+      "language": {
+        "en": "English",
+        "fr": "Français"
+      }
+    },
+    "hero": {
+      "title": "Connectez-vous, collaborez, créez.",
+      "paragraph": "Rejoignez des salles d'étude, collaborez sur des projets et participez à des tournois pour apprendre, progresser et aller plus loin avec des étudiants qui partagent votre passion.",
+      "GetStarted": "Commencer !"
+    },
+    "stats": {
+      "secure": "Sécurisé",
+      "secure_desc": "Salles privées et sécurisées pour étudier et réaliser des projets.",
+      "impact": "Impact",
+      "impact_desc": "Nous avons accompagné plus de 20 étudiants dans leur parcours d'apprentissage.",
+      "robust": "Robuste",
+      "robust_desc": "Ressources et outils riches pour améliorer votre expérience."
+    },
+    "features": {
+      "title": "Fonctionnalités clés",
+      "learn": "Apprendre ensemble",
+      "learn_desc": "Rejoignez des salles d'étude virtuelles pour collaborer avec vos pairs, partager des ressources et relever des défis ensemble.",
+      "projects": "Projets collaboratifs",
+      "projects_desc": "Réalisez des projets concrets avec d'autres étudiants et formez une équipe.",
+      "tournaments": "Tournois compétitifs",
+      "tournaments_desc": "Participez à des tournois de programmation et de développement pour tester vos compétences."
+    },
+    "footer": {
+      "tagline": "Connecter • Collaborer • Créer",
+      "rights": "Tous droits réservés.",
+      "explore": {
+        "title": "Explorer",
+        "courses": "Cours",
+        "projects": "Projets",
+        "quizzes": "Quiz",
+        "exams": "Examen blanc",
+        "notes": "Notes",
+        "tournaments": "Tournois"
+      },
+      "support": {
+        "title": "Support",
+        "safety": "Sécurité et modération",
+        "privacy": "Politique de confidentialité",
+        "terms": "Conditions d'utilisation",
+        "contact": "Contact"
+      },
+      "universities": {
+        "title": "Universités au Canada",
+        "concordia": "Université Concordia",
+        "mcgill": "Université McGill",
+        "umontreal": "Université de Montréal",
+        "laval": "Université Laval",
+        "toronto": "Université de Toronto"
+      }
+    }
+  }
+}
