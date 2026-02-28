@@ -53,7 +53,7 @@ export default function Features() {
 
   return (
     <section className="w-full max-w-8xl mx-auto py-10">
-      <h2 className="text-3xl font-bold text-center mb-8">
+      <h2 className="text-3xl font-bold text-center mb-8 text-foreground">
         {t("features.title")}
       </h2>
 

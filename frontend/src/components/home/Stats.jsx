@@ -34,8 +34,8 @@ function StatCard({ icon, subtitle, text }) {
         <div className="flex flex-col items-center justify-center gap-5 w-72 lg:w-full p-4">
             {icon}
             <div className="flex flex-col items-center gap-2">
-                <h2 className="text-3xl font-bold">{subtitle}</h2>
-                <p className="text-center">{text}</p>
+                <h2 className="text-3xl font-bold text-foreground">{subtitle}</h2>
+                <p className="text-center text-muted-foreground">{text}</p>
             </div>
         </div>
     )

@@ -8,14 +8,12 @@ export default function Hero() {
 
     return (
         <div className="flex flex-col items-center justify-center gap-8">
-            <h1 className="text-5xl lg:text-7xl text-center
-                font-extrabold tracking-tight text-slate-900 dark:text-white"
+            <h1 className="text-5xl lg:text-7xl text-center font-extrabold tracking-tight text-foreground"
             >
                 {t("hero.title")}
             </h1>
 
-            <p className="text-lg lg:text-xl text-center max-w-3xl mx-auto px-4
-                leading-relaxed"
+            <p className="text-lg lg:text-xl text-center max-w-3xl mx-auto px-4 leading-relaxed"
             >
                 {t("hero.paragraph")}
             </p>

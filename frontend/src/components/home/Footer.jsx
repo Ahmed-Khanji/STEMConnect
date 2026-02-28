@@ -39,7 +39,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-black text-white dark:bg-white dark:text-black">
+    <footer className="bg-footer text-footer-foreground">
       <div className="mx-auto max-w-7xl pl-6 pr-4 md:pl-10 md:pr-6 lg:pl-16 lg:pr-8 py-12">
         <TopBrandRow t={t} />
 
@@ -62,13 +62,13 @@ const getYear = () => new Date().getFullYear();
 /* ---------- Sections ---------- */
 function TopBrandRow({ t }) {
   return (
-    <div className="flex items-center justify-between pb-8 border-b border-white/10 dark:border-black/30">
+    <div className="flex items-center justify-between pb-8 border-b border-footer-border">
       <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded-full bg-white/10 dark:bg-black/80" aria-hidden="true" />
+        <div className="h-8 w-8 rounded-full bg-footer-foreground" aria-hidden="true" />
         <span className="text-lg font-bold">STEMConnect</span>
       </div>
 
-      <p className="text-xs text-white/60 dark:text-black/90">
+      <p className="text-xs text-footer-muted">
         {t("footer.tagline", "Connect • Collaborate • Create")}
       </p>
     </div>
@@ -88,7 +88,7 @@ function FooterColumns({ explore, support, universities }) {
 function FooterCol({ title, links = [] }) {
   return (
     <nav aria-label={title}>
-      <h3 className="text-xs font-semibold tracking-wider text-white/60 dark:text-black/60 uppercase">
+      <h3 className="text-xs font-semibold tracking-wider text-footer-muted uppercase">
         {title}
       </h3>
 
@@ -97,7 +97,7 @@ function FooterCol({ title, links = [] }) {
           <li key={i}>
             <a
               href={l.href || "#"}
-              className="text-sm text-white/90 dark:text-black hover:text-gray-600 dark:hover:text-black/50 transition"
+              className="text-sm text-footer-foreground hover:text-footer-muted transition-colors"
             >
               {l.label}
             </a>
@@ -110,8 +110,8 @@ function FooterCol({ title, links = [] }) {
 
 function BottomLine({ t, year }) {
   return (
-    <div className="mt-10 border-t border-white/10 dark:border-black/30 pt-6 text-xs text-white/60 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <p className="dark:text-black/90">
+    <div className="mt-10 border-t border-footer-border pt-6 text-xs text-footer-muted flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>
         © {year} STEMConnect. {t("footer.rights", "All rights reserved.")}
       </p>
 
@@ -126,7 +126,7 @@ function SocialLinks() {
       <a
         href="https://www.linkedin.com/in/ahmedkhanji/"
         aria-label="LinkedIn"
-        className="hover:text-white dark:text-black dark:hover:text-black/50"
+        className="hover:text-footer-foreground hover:opacity-70"
         target="_blank"
         rel="noreferrer"
       >
@@ -136,7 +136,7 @@ function SocialLinks() {
       <a
         href="https://github.com/Ahmed-Khanji/STEMConnect"
         aria-label="GitHub"
-        className="hover:text-white dark:text-black dark:hover:text-black/50"
+        className="hover:text-footer-foreground hover:opacity-70"
         target="_blank"
         rel="noreferrer"
       >
@@ -146,7 +146,7 @@ function SocialLinks() {
       <a
         href="https://www.instagram.com/ak_softwaredev"
         aria-label="Instagram"
-        className="hover:text-white dark:text-black dark:hover:text-black/50"
+        className="hover:text-footer-foreground hover:opacity-70"
         target="_blank"
         rel="noreferrer"
       >

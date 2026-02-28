@@ -34,8 +34,7 @@ function NavBar({ scrolled = false}) {
   }, []);
 
   return (
-    <nav className={`fixed top-0 inset-x-0 z-50
-      backdrop-blur transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}
+    <nav className={`fixed top-0 inset-x-0 z-50 backdrop-blur transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}
     >
       <div className="flex justify-between items-center max-w-screen-2xl h-16 mx-auto px-8 lg:px-12">
         <Link to="/" className="flex items-center gap-3 cursor-pointer">
@@ -56,12 +55,11 @@ function NavBar({ scrolled = false}) {
             </button>
             {open && (
               <div
-                className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 mt-1 w-36 rounded-md border shadow
-                          bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 mt-1 w-36 rounded-md border border-border bg-popover text-popover-foreground shadow-md"
                 role="menu"
               >
                 <button
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full text-left px-3 py-2 hover:bg-accent rounded-t-md"
                   onClick={() => {
                     setOpen(false);
                     i18n.changeLanguage("en");
@@ -70,7 +68,7 @@ function NavBar({ scrolled = false}) {
                   English
                 </button>
                 <button
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full text-left px-3 py-2 hover:bg-accent rounded-b-md"
                   onClick={() => {
                     setOpen(false);
                     i18n.changeLanguage("fr");
@@ -100,7 +98,7 @@ function NavBar({ scrolled = false}) {
           {/* Auth buttons */}
           <div className="flex flex-row items-center">
             {loading ? (
-              <div className="h-9 w-9 rounded-full bg-black/10 dark:bg-white/10 animate-pulse" />
+              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
                 {/* Avatar */}
@@ -116,13 +114,13 @@ function NavBar({ scrolled = false}) {
                 {/* logout button */}
                 <button
                   onClick={logout}
-                  className="px-3 py-2 hover:text-gray-500"
+                  className="px-3 py-2 hover:text-muted-foreground transition-colors"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <Link to="/auth" className="inline-block hover:text-gray-500">
+              <Link to="/auth" className="inline-block hover:text-muted-foreground transition-colors">
                 {t("nav.auth")}
               </Link>
             )}
