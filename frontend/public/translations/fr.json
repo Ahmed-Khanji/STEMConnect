@@ -28,7 +28,10 @@
       "projects": "Projets collaboratifs",
       "projects_desc": "Réalisez des projets concrets avec d'autres étudiants et formez une équipe.",
       "tournaments": "Tournois compétitifs",
-      "tournaments_desc": "Participez à des tournois de programmation et de développement pour tester vos compétences."
+      "tournaments_desc": "Participez à des tournois de programmation et de développement pour tester vos compétences.",
+      "learnMore": "En savoir plus →",
+      "viewProjects": "Voir les projets →",
+      "joinNow": "Commencer la compétition →"
     },
     "footer": {
       "tagline": "Connecter • Collaborer • Créer",

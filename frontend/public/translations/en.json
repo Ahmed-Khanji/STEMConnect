@@ -28,7 +28,10 @@
       "projects": "Collaborative Projects",
       "projects_desc": "Build real world projects with fellow students and start a team.",
       "tournaments": "Competitive Tournaments",
-      "tournaments_desc": "Participate in coding and developer tournaments to test your skills."
+      "tournaments_desc": "Participate in coding and developer tournaments to test your skills.",
+      "learnMore": "Learn more →",
+      "viewProjects": "View projects →",
+      "joinNow": "Compete Now →"
     },
     "footer": {
       "tagline": "Connect • Collaborate • Create",

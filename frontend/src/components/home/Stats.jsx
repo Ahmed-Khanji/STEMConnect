@@ -19,7 +19,7 @@ export default function Stats() {
             <StatCard 
               icon={<GraduationCap size={64} weight="duotone" className="text-amber-500" />} 
               subtitle={tstat("impact")} 
-              text="We’ve " 
+              text={tstat("impact_desc")} 
             />
             <StatCard 
               icon={<Database size={64} weight="duotone" className="text-indigo-600" />} 
