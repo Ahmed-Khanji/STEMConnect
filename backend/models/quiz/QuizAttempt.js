@@ -15,9 +15,8 @@ const quizAttemptSchema = new mongoose.Schema(
     quiz: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true, index: true },
     course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, index: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    score: { type: Number, default: 0, min: 0 },
-    total: { type: Number, required: true, min: 1 },
-    percentage: { type: Number, default: 0, min: 0, max: 100 },
+    score: { type: Number, default: 0, min: 0 }, // number of correct answers
+    total: { type: Number, required: true, min: 1 }, // number of questions
     timeTakenSeconds: { type: Number, default: 0, min: 0 },
     startedAt: { type: Date, required: true, default: Date.now, index: true },
     completedAt: { type: Date, index: true },

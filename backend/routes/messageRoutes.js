@@ -31,7 +31,7 @@ async function assertCourseAccess(courseId, userId) {
     return course;
 }
 
-// GET /api/messages/:courseId?limit=40&before=<ISO date>
+// GET /api/messages/:courseId?limit=40&before=<ISO date>: load latest messages in a course
 router.get("/:courseId", authenticateToken, async (req, res) => {
     try {
       const { courseId } = req.params;

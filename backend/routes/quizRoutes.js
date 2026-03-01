@@ -1,8 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Quiz = require("../models/Quiz");
-const Question = require("../models/Question");
-const QuizAttempt = require("../models/QuizAttempt");
+const { Quiz, Question, QuizAttempt } = require("../models/quiz");
 
 const { authenticateToken } = require("./authRoutes");
 const { generateQuizQuestions, validateQuestion } = require('../services/geminiService');
@@ -83,16 +81,17 @@ router.post("/:courseId", async (req, res) => {
         
         const saved = await Question.insertMany(aiDocs.slice(0, qc), { ordered: true });
 
-        // Create Quiz that stores IDs
+        // Create Quiz that stores question ObjectIds only
         const quiz = await Quiz.create({
             course: courseId,
             topic: cleanTopic,
             questionCount: qc,
             durationSeconds: dur,
-            questions: saved,
+            questions: saved.map((d) => d._id),
             meta: generated.meta,
           });
-        return res.status(201).json(quiz);
+        const populated = await Quiz.findById(quiz._id).populate("questions").lean();
+        return res.status(201).json(populated);
     } 
     catch (err) {
         return res.status(500).json({ message: `Server error creating quiz: ${err.message}` });
@@ -105,10 +104,13 @@ router.get("/:courseId", async (req, res) => {
       const { courseId } = req.params;
       if (!mongoose.Types.ObjectId.isValid(courseId)) return res.status(400).json({ message: "Invalid courseId" });
   
-      // latest by createdAt
-      const quiz = await Quiz.findOne({ course: courseId }).sort({ createdAt: -1 }).lean();
+      // latest by createdAt, with questions populated for frontend
+      const quiz = await Quiz.findOne({ course: courseId })
+        .sort({ createdAt: -1 })
+        .populate("questions")
+        .lean();
       if (!quiz) return res.status(404).json({ message: "No quiz found for this course" });
-      
+
       return res.status(200).json(quiz);
     } catch (err) {
       return res.status(500).json({ message: `Server error fetching quiz: ${err.message}` });
