@@ -11,7 +11,7 @@ const { authRoutes, authenticateToken } = require("./routes/authRoutes");
 const authGoogleRoutes = require("./routes/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
 const messageRoutes = require("./routes/messageRoutes");
-const quizRoutes = require("./routes/quizRoutes");
+const quizRoutes = require("./routes/quiz");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
