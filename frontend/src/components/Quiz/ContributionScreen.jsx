@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle } from "lucide-react";
-import { createQuestion, createQuiz } from "@/api/quizApi";
+import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { createQuestion, createQuiz, generateExplanation as generateExplanationApi } from "@/api/quizApi";
 
 /* ===== Small helpers ===== */
 
@@ -19,17 +19,6 @@ const INITIAL_FORM = {
     explanation: "",
     isConfirmed: false,
 };
-
-// TODO: replace with your real AI service (Gemini, etc.)
-async function generateExplanation(questionText, options, correctIndexZeroBased) {
-  // Keep it harmless + predictable for now
-  const picked =
-    typeof correctIndexZeroBased === "number" ? options[correctIndexZeroBased] : null;
-
-  return `Explain briefly why the answer is correct.\n\nQuestion: ${questionText}${
-    picked ? `\nCorrect: ${picked}` : ""
-  }`;
-}
 
 /* ===== Main component ===== */
 
@@ -84,7 +73,7 @@ export default function ContributionScreen({
     });
   };
 
-  // TODO: Generates an AI explanation and stores it in the form
+  // Generates an AI explanation via backend (Gemini) and stores it in the form
   const handleAiExplain = async () => {
     const needsMcqCorrect =
       questionForm.questionType === QuestionType.MCQ && questionForm.correctOption === null;
@@ -94,17 +83,22 @@ export default function ContributionScreen({
     }
     showToast("AI is thinking...", "loading");
     try {
-      const correctIndexZeroBased =
-        questionForm.correctOption !== null ? questionForm.correctOption - 1 : null;
-      const explanation = await generateExplanation(
-        questionForm.questionText,
-        questionForm.options,
-        correctIndexZeroBased
-      );
-      setQuestionForm((prev) => ({ ...prev, explanation }));
+      const payload = {
+        questionText: questionForm.questionText,
+        type: questionForm.questionType,
+      };
+      if (questionForm.questionType === QuestionType.MCQ) {
+        payload.options = questionForm.options;
+        payload.correctIndex = questionForm.correctOption !== null ? questionForm.correctOption - 1 : 0;
+      } else {
+        payload.correctAnswer = questionForm.shortAnswer ?? "";
+      }
+      const data = await generateExplanationApi(payload);
+      setQuestionForm((prev) => ({ ...prev, explanation: data.explanation || "" }));
       showToast("AI Explanation Generated!", "success");
     } catch (err) {
-      showToast("AI failed to generate an explanation", "error");
+      const msg = err?.response?.data?.message || err?.message || "Failed to generate explanation";
+      showToast(msg, "error");
     }
   };
 
@@ -163,9 +157,9 @@ export default function ContributionScreen({
           return;
         }
       }
-
-      showToast("Question submitted successfully", "success");
       resetForm();
+      showToast("Question submitted successfully", "success");
+      await new Promise((r) => setTimeout(r, 2000));
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Failed to submit";
       showToast(msg, "error");
@@ -492,9 +486,9 @@ function ExplanationSection({ questionForm, isLoading, onInputChange, onAiExplai
           type="button"
           onClick={onAiExplain}
           disabled={disableAi}
-          className="flex items-center gap-1.5 text-xs font-bold text-purple-500 hover:text-purple-500/80 transition-colors uppercase tracking-tight disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs font-bold text-purple-500 hover:text-purple-500/80 transition-colors uppercase tracking-tight disabled:opacity-50 disabled:pointer-events-none"
         >
-          <span className="material-icons-round text-sm">auto_awesome</span>
+          <Sparkles className="size-4 shrink-0" />
           AI Suggest
         </button>
       </div>

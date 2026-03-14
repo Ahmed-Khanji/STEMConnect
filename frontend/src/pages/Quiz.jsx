@@ -174,7 +174,7 @@ export default function Quiz() {
           }}
           onContributionLimitReached={() => {
             localStorage.setItem(CONTRIBUTION_LIMIT_KEY, "1");
-            setView("notEnoughFromOthers");
+            setView("landing");
           }}
         />
       )}

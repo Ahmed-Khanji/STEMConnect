@@ -1,6 +1,8 @@
 const { GoogleGenAI, Type } = require("@google/genai");
+const { quizCuratorPrompt, questionExplanationPrompt } = require("./prompts");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const MODEL = "gemini-2.5-flash";
 
 function extractText(resp) {
     // fallback-safe extraction (SDK versions vary according to ai)
@@ -13,74 +15,11 @@ function extractText(resp) {
 }
 
 async function generateQuizQuestions(topic, questionCount, questions) {
-  const prompt = `
-        You are an assessment-quality validator and quiz curator.
-
-        Topic: ${topic}
-
-        You will receive a list of candidate questions (mixed quality, possibly redundant). Each candidate may be MCQ or short-answer.
-
-        Your tasks:
-        1. Evaluate all provided questions.
-        2. Select exactly ${questionCount} questions.
-        3. Rank and choose them based on the criteria below.
-        4. Optionally rephrase selected questions to improve clarity and professionalism.
-        5. Increase difficulty for at most 3 questions (subtle depth increase only).
-
-        Selection criteria (all required):
-        - Strong relevance to ${topic}
-        - Clear wording with exactly one correct answer
-        - Tests conceptual understanding, not trivia or trick questions
-        - High likelihood of correctness
-        - Allows a clear, short explanation
-        - Balanced difficulty: ~3 easy, ~4 medium, ~3 hard
-        - Covers multiple subtopics
-
-        Rejection rules:
-        - Reject vague, redundant, misleading, or incorrect questions
-        - Avoid selecting multiple questions on the same tiny detail
-
-        For each selected question:
-        - Keep MCQ format
-        - Provide exactly 4 options
-        - Provide correctIndex (0–3)
-        - Provide a short, clear explanation
-        - Preserve original meaning if rephrased
-
-        Output requirements:
-        - Return JSON ONLY
-        - No markdown
-        - No comments
-        - No extra text
-
-        Output format (MUST match this schema):
-        {
-            "questions": [
-                {
-                "topic": "string",
-                "question": "string",
-                "type": "mcq" | "short",
-                "explanation": "string",
-                "options": ["string", "string", "string", "string"],      // required only if type === "mcq"
-                "correctIndex": 0,                                        // required only if type === "mcq"
-                "correctAnswer": "string or [string]"                     // required only if type === "short"
-                }
-            ],
-            "meta": {
-                "difficultyMix": { "easy": 0, "medium": 0, "hard": 0 },
-                "subtopicsCovered": ["string"],
-                "rejectedCount": 0,
-                "commonRejectionReasons": ["string"]
-            }
-        }
-
-        ===== CANDIDATE QUESTIONS (INPUT) =====
-        ${JSON.stringify(questions, null, 2)}
-    `;
+  const prompt = quizCuratorPrompt(topic, questionCount, questions);
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -185,9 +124,36 @@ async function generateQuizQuestions(topic, questionCount, questions) {
     return data; // { questions: [...], meta: {...} }
 
   } catch (err) {
-    throw new Error(`Gemini generation failed: ${err.message}`);
+    console.log(err);
+    throw new Error(`Gemini generation failed`);
   }
 }
 
+async function generateQuestionExplanation(input) {
+  const { questionText, type, options, correctIndex, correctAnswer } = input;
+  const hasMcq = type === "mcq" && Array.isArray(options) && typeof correctIndex === "number";
+  const correctOption = hasMcq ? options[correctIndex] : null;
 
-module.exports = { generateQuizQuestions };
+  const prompt = questionExplanationPrompt({
+    questionText,
+    hasMcq,
+    correctIndex,
+    correctOption,
+    correctAnswer,
+    options,
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    });
+    const text = extractText(response);
+    return (text || "Explanation could not be generated.").trim();
+  } catch (err) {
+    console.log(err);
+    throw new Error(`Explanation generation failed`);
+  }
+}
+
+module.exports = { generateQuizQuestions, generateQuestionExplanation };

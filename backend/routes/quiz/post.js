@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { Quiz, Question } = require("../../models/quiz");
-const { generateQuizQuestions } = require("../../services/geminiService");
+const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/geminiService");
 
 function normalizeText(str) {
   return String(str)
@@ -11,6 +11,27 @@ function normalizeText(str) {
 }
 
 function registerPostRoutes(router) {
+  // Generate AI explanation for a question (must be before /:courseId)
+  router.post("/generate-explanation", async (req, res) => {
+    try {
+      const { questionText, type, options, correctIndex, correctAnswer } = req.body;
+      if (!String(questionText || "").trim()) {
+        return res.status(400).json({ message: "questionText is required" });
+      }
+      const explanation = await generateQuestionExplanation({
+        questionText: String(questionText).trim(),
+        type: type === "short_answer" ? "short_answer" : "mcq",
+        options: Array.isArray(options) ? options : undefined,
+        correctIndex: typeof correctIndex === "number" ? correctIndex : undefined,
+        correctAnswer: correctAnswer != null ? String(correctAnswer) : undefined,
+      });
+      return res.status(200).json({ explanation });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Failed to generate explanation" });
+    }
+  });
+
   // Create a new quiz for a course (only if course has enough questions)
   router.post("/:courseId", async (req, res) => {
     try {
@@ -90,9 +111,10 @@ function registerPostRoutes(router) {
         .lean();
       return res.status(201).json(populated);
     } catch (err) {
+      console.log(err);
       return res
         .status(500)
-        .json({ message: `Server error creating quiz: ${err.message}` });
+        .json({ message: 'Server error creating quiz' });
     }
   });
 
@@ -132,7 +154,8 @@ function registerPostRoutes(router) {
       const created = await Question.create(doc);
       return res.status(201).json(created);
     } catch (err) {
-      return res.status(500).json({ message: `Server error: ${err.message}` });
+      console.log(err);
+      return res.status(500).json({ message: 'Server error for creating question' });
     }
   });
 

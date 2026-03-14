@@ -26,6 +26,12 @@ export async function getLatestQuiz(courseId) {
 
 // Create a single human-contributed question for a course
 export async function createQuestion(courseId, payload) {
-  const res = await client.post(`/api/quiz/${courseId}/questions`, payload);
+  const res = await client.post(`/api/quiz/${courseId}/question`, payload);
+  return res.data;
+}
+
+// Generate AI explanation for a question (backend calls Gemini)
+export async function generateExplanation(payload) {
+  const res = await client.post("/api/quiz/generate-explanation", payload);
   return res.data;
 }

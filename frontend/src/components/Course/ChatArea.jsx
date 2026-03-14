@@ -201,13 +201,14 @@ function TopHeader({ course, onSelectCourse, onCreateClick }) {
 }
 
 function MessagesArea({ course, messages, loading, scrollRef, bottomRef, myId }) {
-  const canScroll = !loading && messages.length > 0;
+  const hasMessages = messages.length > 0;
+  const showScroll = !loading && hasMessages;
   return (
     <div
       ref={scrollRef}
       className={`flex-1 p-6 space-y-4 transition-opacity ${
-        loading ? "opacity-0 overflow-hidden" : "opacity-100 overflow-y-auto"
-      }`}
+        loading ? "opacity-0 overflow-hidden" : "opacity-100"
+      } ${showScroll ? "overflow-y-auto" : "overflow-hidden"}`}
     >
       {loading && (
         <div className="h-full flex items-center justify-center text-sm text-gray-500">

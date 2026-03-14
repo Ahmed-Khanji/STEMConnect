@@ -106,7 +106,7 @@ function NavBar({ scrolled = false}) {
                 <div
                   className="h-9 w-9 rounded-full hover:cursor-pointer
                             bg-emerald-400/30 border border-emerald-300/40
-                            flex items-center justify-center font-semibold text-black"
+                            flex items-center justify-center font-semibold text-black dark:text-slate-200"
                   title={user?.name || user?.email || "User"}
                 >
                   {getInitials(user)}
