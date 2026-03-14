@@ -23,7 +23,7 @@ export default function StartScreen({ course, onStart, isDarkMode, toggleDarkMod
 
   // later can be made dynamic
   const durationMinutes = 5;
-  const questionCount = 10;
+  const questionCount = 5;
 
   function getCurrentSemester() {
     const now = new Date();
@@ -105,7 +105,7 @@ function MainBanner({ title, subtitle }) {
   );
 }
 
-function StatsCards({ durationMinutes = 5, questionCount = 10 }) {
+function StatsCards({ durationMinutes = 5, questionCount = 5 }) {
   return (
     <div className="grid grid-cols-2 gap-4">
       <StatCard

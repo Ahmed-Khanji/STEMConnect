@@ -43,7 +43,7 @@ function registerGetRoutes(router) {
     }
   });
 
-  // Get quiz statistics (all attempts for this quiz + summary stats)
+  // Get quiz statistics (all attempts for this quiz)
   router.get("/quizzes/:quizId/stats", async (req, res) => {
     try {
       const { quizId } = req.params;
@@ -99,8 +99,20 @@ function registerGetRoutes(router) {
   });
 
   // Get current user's attempt history for a quiz
-  router.get("/quizzes/:quizId/my-attempts", (req, res) => {
-    // TODO
+  router.get("/quizzes/:quizId/my-attempts", async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const { quizId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(quizId))
+        return res.status(400).json({ message: "Invalid quizId" });
+
+      const attempts = await QuizAttempt.find({ quiz: quizId, user: userId })
+        .sort({ startedAt: -1 })
+        .lean();
+      return res.status(200).json(attempts);
+    } catch (err) {
+      return res.status(500).json({ message: `Server error: ${err.message}` });
+    }
   });
 }
 

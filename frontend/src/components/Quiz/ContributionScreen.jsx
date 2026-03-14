@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle } from "lucide-react";
+import { createQuestion, createQuiz } from "@/api/quizApi";
 
 /* ===== Small helpers ===== */
 
@@ -32,14 +33,19 @@ async function generateExplanation(questionText, options, correctIndexZeroBased)
 
 /* ===== Main component ===== */
 
+const CONTRIBUTION_TARGET = 3;
+
 export default function ContributionScreen({
     isDarkMode,
     toggleDarkMode,
     onBack,
     course,
     needContribution = false,
+    onQuizCreated,
+    onContributionLimitReached,
 }) {
     const [questionForm, setQuestionForm] = useState(INITIAL_FORM);
+    const [submitCount, setSubmitCount] = useState(0);
     const [toast, setToast] = useState({
         show: false,
         message: "",
@@ -103,14 +109,67 @@ export default function ContributionScreen({
   };
 
   // Validates and submits the contribution
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!questionForm.isConfirmed) {
       showToast("Please confirm your submission", "error");
       return;
     }
-    showToast("Success: Submitted for review", "success");
-    // TODO: finish logic
+    if (!course?._id) {
+      showToast("Course not found", "error");
+      return;
+    }
+    const { topicName, questionText, questionType, options, correctOption, shortAnswer, explanation } = questionForm;
+    if (!topicName?.trim() || !questionText?.trim() || !explanation?.trim()) {
+      showToast("Topic, question text and explanation are required", "error");
+      return;
+    }
+    if (questionType === QuestionType.MCQ) {
+      if (options.some((o) => !String(o).trim()) || correctOption == null) {
+        showToast("MCQ must have all 4 options and a correct choice", "error");
+        return;
+      }
+    } else if (!String(shortAnswer ?? "").trim()) {
+      showToast("Short answer must have an expected answer", "error");
+      return;
+    }
+
+    showToast("Submitting...", "loading");
+    try {
+      const payload = {
+        topic: topicName.trim(),
+        question: questionText.trim(),
+        type: questionType,
+        explanation: explanation.trim(),
+      };
+      if (questionType === QuestionType.MCQ) {
+        payload.options = options.map((o) => String(o).trim());
+        payload.correctIndex = correctOption - 1;
+      } else {
+        payload.correctAnswer = String(shortAnswer).trim();
+      }
+      await createQuestion(course._id, payload);
+      const nextCount = submitCount + 1;
+      setSubmitCount(nextCount);
+
+      if (nextCount >= CONTRIBUTION_TARGET) {
+        showToast("Creating quiz...", "loading");
+        try {
+          const quiz = await createQuiz(course._id, { topic: payload.topic });
+          if (onQuizCreated) onQuizCreated(quiz);
+          return;
+        } catch (createErr) {
+          if (onContributionLimitReached) onContributionLimitReached();
+          return;
+        }
+      }
+
+      showToast("Question submitted successfully", "success");
+      resetForm();
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to submit";
+      showToast(msg, "error");
+    }
   };
 
   // showing how many characters have been typed for topic (max 50)
@@ -122,7 +181,7 @@ export default function ContributionScreen({
   const courseName = course?.name || "Your course";
 
   return (
-    <div className="max-w-4xl mx-auto px-6 pb-20 pt-8 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto px-6 pb-20 pt-8 animate-fade-in duration-700">
         <TopHeader
             isDarkMode={isDarkMode}
             toggleDarkMode={toggleDarkMode}

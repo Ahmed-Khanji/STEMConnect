@@ -25,7 +25,7 @@ async function generateQuizQuestions(topic, questionCount, questions) {
         2. Select exactly ${questionCount} questions.
         3. Rank and choose them based on the criteria below.
         4. Optionally rephrase selected questions to improve clarity and professionalism.
-        5. Increase difficulty for at most 2 questions (subtle depth increase only).
+        5. Increase difficulty for at most 3 questions (subtle depth increase only).
 
         Selection criteria (all required):
         - Strong relevance to ${topic}
@@ -189,8 +189,5 @@ async function generateQuizQuestions(topic, questionCount, questions) {
   }
 }
 
-// validateQuestion function to validate questions
-async function validateQuestion() {}
 
-
-module.exports = { generateQuizQuestions, validateQuestion };
+module.exports = { generateQuizQuestions };

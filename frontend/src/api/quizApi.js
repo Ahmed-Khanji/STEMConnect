@@ -1,7 +1,7 @@
 import client, { handleError } from "./client";
 
 // Create a new quiz for a course
-export async function createQuiz(courseId, { topic, questionCount = 10, durationSeconds = 300 }) {
+export async function createQuiz(courseId, { topic, questionCount = 5, durationSeconds = 300 }) {
     try {
       const res = await client.post(`/api/quiz/${courseId}`, {
         topic,
@@ -22,4 +22,10 @@ export async function getLatestQuiz(courseId) {
     } catch (err) {
       throw err
     }
+}
+
+// Create a single human-contributed question for a course
+export async function createQuestion(courseId, payload) {
+  const res = await client.post(`/api/quiz/${courseId}/questions`, payload);
+  return res.data;
 }
