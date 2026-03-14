@@ -8,10 +8,7 @@ export default function QuickActions({ course }) {
   function handleAction(action) {
     if (!courseId) return;
     if (action === "QUIZ") navigate(`/courses/${courseId}/quiz`);
-    if (action === "EXAM") {
-      // later
-      console.log("Go to exam");
-    }
+    if (action === "EXAM") navigate("/coming-soon");
   }
 
   return (

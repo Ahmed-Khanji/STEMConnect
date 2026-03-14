@@ -5,7 +5,8 @@ import Home from './pages/Home.jsx';
 import Auth from './pages/Auth.jsx';
 import Course from './pages/Course.jsx';
 import Quiz from "./pages/Quiz.jsx";
-import Test from './pages/Test.jsx'
+import Test from './pages/Test.jsx';
+import ComingSoon from "./pages/ComingSoon.jsx";
 
 function App() {
 
@@ -17,13 +18,9 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-        {/*
-        <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
-        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-        <Route path="/projects/:id" element={<ProtectedRoute><ProjectSpace /></ProtectedRoute>} />
-        <Route path="/tournaments" element={<ProtectedRoute><Tournaments /></ProtectedRoute>} />
-        <Route path="/tournaments/:id" element={<ProtectedRoute><Tournament /></ProtectedRoute>} />
-        */}
+        {/* <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} /> */}
+        <Route path="/tournaments" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+        <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
       </Routes>
     </div>
   )
