@@ -88,7 +88,7 @@ export default function Quiz() {
       const qs = Array.isArray(created?.questions) ? created.questions : [];
       setQuestions(qs);
       setView("quiz");
-    } 
+    }
     catch (err) {
       const status = err?.response?.status;
       // 422 = not enough questions → send to contribution

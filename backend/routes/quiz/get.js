@@ -3,7 +3,7 @@ const { Quiz, QuizAttempt } = require("../../models/quiz");
 
 function registerGetRoutes(router) {
   
-  // Get latest quiz for a course (or 404 if none)
+  // Get latest quiz for a course
   router.get("/:courseId", async (req, res) => {
     try {
       const { courseId } = req.params;
@@ -61,22 +61,23 @@ function registerGetRoutes(router) {
 
       const attemptCount = attempts.length;
       const totalQuestions = quiz.questionCount || 0;
+      
       const sumScore = attempts.reduce((acc, a) => acc + (a.score ?? 0), 0);
-      const avgScore = attemptCount > 0 ? sumScore / attemptCount : 0;
-      const avgScorePercent = totalQuestions > 0 && attemptCount > 0
+      const avgScorePercent = totalQuestions > 0 && attemptCount > 0 // between 0 and 100
           ? Math.round((sumScore / (attemptCount * totalQuestions)) * 100)
           : 0;
+      
       const passingAttempts = attempts.filter(
         (a) => a.total > 0 && (a.score ?? 0) / a.total >= 0.6 // 60% pass rate
       );
       const passedUserIds = [...new Set(passingAttempts.map((a) => String(a.user)))];
-      const passRate = attemptCount > 0
+      const passRate = attemptCount > 0 // between 0 and 100
           ? Math.round((passingAttempts.length / attemptCount) * 100) // percent of users who passed
           : 0;
+      
       const sumTime = attempts.reduce(
         (acc, a) => acc + (a.timeTakenSeconds ?? 0),
-        0
-      );
+      0); // total time taken for all attempts (in seconds)
       const avgTimeTakenSeconds = attemptCount > 0 ? Math.round(sumTime / attemptCount) : 0;
 
       return res.status(200).json({
@@ -84,7 +85,6 @@ function registerGetRoutes(router) {
         attempts,
         stats: {
           attemptCount,
-          avgScore,
           avgScorePercent,
           passedUserIds,
           passRate,
