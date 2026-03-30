@@ -14,6 +14,12 @@ function registerPostRoutes(router) {
   // Generate AI explanation for a question (must be before /:courseId)
   router.post("/generate-explanation", async (req, res) => {
     try {
+      if (!String(process.env.GEMINI_API_KEY || "").trim()) {
+        return res.status(503).json({
+          message:
+            "AI explanation is unavailable: set GEMINI_API_KEY in the backend .env and restart the server.",
+        });
+      }
       const { questionText, type, options, correctIndex, correctAnswer } = req.body;
       if (!String(questionText || "").trim()) {
         return res.status(400).json({ message: "questionText is required" });
@@ -27,7 +33,7 @@ function registerPostRoutes(router) {
       });
       return res.status(200).json({ explanation });
     } catch (err) {
-      console.log(err);
+      console.error("generate-explanation:", err?.message || err);
       return res.status(500).json({ message: "Failed to generate explanation" });
     }
   });

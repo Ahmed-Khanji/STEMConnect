@@ -11,4 +11,9 @@ const courseReadStateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("CourseReadState", courseReadStateSchema);
+// Explicit collection name
+module.exports = mongoose.model(
+  "CourseReadState",
+  courseReadStateSchema,
+  "course_read_states"
+);
