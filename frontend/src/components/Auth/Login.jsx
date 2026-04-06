@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { App } from "antd";
 import { login } from "../../api/authApi";
 import { GoogleIcon, EyeIcon, EyeOffIcon } from "../ui/icons";
 
 export default function Login({ onSwitchToRegister }) {
   const navigate = useNavigate();
+  const { message } = App.useApp();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -54,7 +56,7 @@ export default function Login({ onSwitchToRegister }) {
       } else if (lower.includes("password") || lower.includes("credentials")) {
         setErrors({ password: msg });
       } else {
-        alert(msg);
+        message.error(msg);
       }
     } finally {
       setLoading(false);
