@@ -4,6 +4,10 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { getCourseById } from "@/api/courseApi";
 import { getLatestQuiz, createQuiz } from "@/api/quizApi";
+import {
+  clearQuizContributionState,
+  shouldShowNeedMoreFromOthers,
+} from "@/lib/quizContributionStorage";
 
 import StartScreen from "@/components/Quiz/StartScreen";
 import QuizScreen from "@/components/Quiz/QuizScreen";
@@ -45,23 +49,16 @@ export default function Quiz() {
     loadCourse();
   }, [courseId, navigate]);
 
-  const CONTRIBUTION_LIMIT_KEY = `contribution_limit_${userId}_${courseId}`;
-
   // Starts the quiz flow: try get latest quiz, otherwise create, otherwise redirect to contribution
   async function startQuiz() {
     if (!courseId) return;
     if (!course) return; // course still loading or missing
 
-    // User already contributed 3 and quiz still couldn't be created → show same sorry page
-    if (localStorage.getItem(CONTRIBUTION_LIMIT_KEY)) {
-      setView("notEnoughFromOthers");
-      return;
-    }
-
     setView("loading");
     try {
       // try fetch latest quiz
       const existing = await getLatestQuiz(courseId);
+      if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(existing?.questions) ? existing.questions : [];
       setQuestions(qs);
       setView("quiz");
@@ -85,13 +82,24 @@ export default function Quiz() {
       const durationSeconds = 300;
 
       const created = await createQuiz(courseId, { topic, questionCount, durationSeconds });
+      if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(created?.questions) ? created.questions : [];
       setQuestions(qs);
       setView("quiz");
     }
     catch (err) {
       const status = err?.response?.status;
-      // 422 = not enough questions → send to contribution
+      const msg = String(err?.response?.data?.message || "");
+      const isHumanPoolShortage = msg.includes("HUMAN");
+      if (
+        status === 422 &&
+        userId &&
+        shouldShowNeedMoreFromOthers(userId, courseId) &&
+        isHumanPoolShortage
+      ) {
+        setView("notEnoughFromOthers");
+        return;
+      }
       if (status === 422) {
         setNeedContribution(true);
         setView("contribution");
@@ -168,14 +176,12 @@ export default function Quiz() {
           }}
           needContribution={needContribution}
           onQuizCreated={(quiz) => {
+            if (userId) clearQuizContributionState(userId, courseId);
             const qs = Array.isArray(quiz?.questions) ? quiz.questions : [];
             setQuestions(qs);
             setView("quiz");
           }}
-          onContributionLimitReached={() => {
-            localStorage.setItem(CONTRIBUTION_LIMIT_KEY, "1");
-            setView("landing");
-          }}
+          onNeedMoreFromOthers={() => setView("notEnoughFromOthers")}
         />
       )}
 
@@ -183,10 +189,10 @@ export default function Quiz() {
         <div className="flex flex-col items-center justify-center flex-grow gap-8 px-6 animate-fade-in duration-500">
           <div className="rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 p-8 max-w-md text-center">
             <p className="text-lg font-semibold text-amber-700 dark:text-amber-200">
-              Sorry, there's not enough contributions from other classmates yet.
+              This course still needs more human-written questions before a quiz can be created.
             </p>
             <p className="text-slate-600 dark:text-slate-400 mt-3 text-sm">
-              You've already contributed. Check back later or encourage others to add questions.
+              You&apos;ve already added three. Ask classmates to contribute, then try starting the quiz again.
             </p>
           </div>
           <button

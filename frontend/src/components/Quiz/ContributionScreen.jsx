@@ -1,6 +1,20 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
-import { createQuestion, createQuiz, generateExplanation as generateExplanationApi } from "@/api/quizApi";
+import {
+  createQuestion,
+  createQuiz,
+  getHumanQuestionCount,
+  getLatestQuiz,
+  generateExplanation as generateExplanationApi,
+} from "@/api/quizApi";
+import { useAuth } from "@/context/AuthContext";
+import {
+  MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+  USER_CONTRIBUTION_THRESHOLD,
+  bumpUserContribCount,
+  clearQuizContributionState,
+  setNeedMoreFromOthers,
+} from "@/lib/quizContributionStorage";
 
 /* ===== Small helpers ===== */
 
@@ -22,7 +36,12 @@ const INITIAL_FORM = {
 
 /* ===== Main component ===== */
 
-const CONTRIBUTION_TARGET = 3;
+function quizHasPopulatedQuestions(quiz) {
+  const qs = quiz?.questions;
+  if (!Array.isArray(qs) || qs.length === 0) return false;
+  const first = qs[0];
+  return first && typeof first === "object" && typeof first.question === "string";
+}
 
 export default function ContributionScreen({
     isDarkMode,
@@ -31,16 +50,45 @@ export default function ContributionScreen({
     course,
     needContribution = false,
     onQuizCreated,
-    onContributionLimitReached,
+    onNeedMoreFromOthers,
 }) {
+    const { user } = useAuth();
+    const userId = user?.userId ?? "";
+
+    /** Human question count for this course; null until first fetch completes */
+    const [humanQuestionCount, setHumanQuestionCount] = useState(null);
+
     const [questionForm, setQuestionForm] = useState(INITIAL_FORM);
-    const [submitCount, setSubmitCount] = useState(0);
     const [toast, setToast] = useState({
         show: false,
         message: "",
         type: "success", // "success" | "error" | "loading"
     });
     const isLoading = toast.show && toast.type === "loading"; // not a state cause depend on a state
+
+    useEffect(() => {
+      const courseId = course?._id;
+      if (!courseId) {
+        setHumanQuestionCount(null);
+        return;
+      }
+      let cancelled = false;
+      (async () => {
+        try {
+          const { count } = await getHumanQuestionCount(courseId);
+          if (!cancelled) {
+            setHumanQuestionCount(typeof count === "number" ? count : 0);
+          }
+        } catch {
+          if (!cancelled) {
+            setHumanQuestionCount(0);
+          }
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [course?._id]);
 
     // Resets the form back to its initial state
     function resetForm() {
@@ -142,21 +190,62 @@ export default function ContributionScreen({
       } else {
         payload.correctAnswer = String(shortAnswer).trim();
       }
-      await createQuestion(course._id, payload);
-      const nextCount = submitCount + 1;
-      setSubmitCount(nextCount);
+      const created = await createQuestion(course._id, payload);
 
-      if (nextCount >= CONTRIBUTION_TARGET) {
+      setHumanQuestionCount((prev) =>
+        typeof prev === "number" ? prev + 1 : typeof created?.humanQuestionCount === "number"
+          ? created.humanQuestionCount
+          : 0
+      );
+      const nextHumanCount =
+        typeof humanQuestionCount === "number"
+          ? humanQuestionCount + 1
+          : typeof created?.humanQuestionCount === "number"
+            ? created.humanQuestionCount
+            : 0;
+
+      const myContribTotal = userId ? bumpUserContribCount(userId, course._id) : 0;
+
+      if (nextHumanCount >= MIN_HUMAN_QUESTIONS_FOR_QUIZ) {
         showToast("Creating quiz...", "loading");
         try {
-          const quiz = await createQuiz(course._id, { topic: payload.topic });
+          let quiz = null;
+          try {
+            quiz = await getLatestQuiz(course._id);
+          } catch (fetchErr) {
+            if (fetchErr?.response?.status !== 404) throw fetchErr;
+          }
+          if (!quizHasPopulatedQuestions(quiz)) {
+            quiz = await createQuiz(course._id, {
+              topic: payload.topic,
+              questionCount: MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+            });
+          }
+          if (userId) clearQuizContributionState(userId, course._id);
           if (onQuizCreated) onQuizCreated(quiz);
           return;
         } catch (createErr) {
-          if (onContributionLimitReached) onContributionLimitReached();
+          const msg =
+            createErr?.response?.data?.message ||
+            createErr?.message ||
+            "Could not create quiz";
+          showToast(msg, "error");
+          resetForm();
           return;
         }
       }
+
+      if (
+        userId &&
+        myContribTotal >= USER_CONTRIBUTION_THRESHOLD &&
+        nextHumanCount < MIN_HUMAN_QUESTIONS_FOR_QUIZ
+      ) {
+        setNeedMoreFromOthers(userId, course._id);
+        setToast({ show: false, message: "", type: "success" });
+        if (onNeedMoreFromOthers) onNeedMoreFromOthers();
+        return;
+      }
+
       resetForm();
       showToast("Question submitted successfully", "success");
       await new Promise((r) => setTimeout(r, 2000));

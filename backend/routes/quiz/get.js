@@ -1,8 +1,26 @@
 const mongoose = require("mongoose");
-const { Quiz, QuizAttempt } = require("../../models/quiz");
+const { Quiz, QuizAttempt, Question } = require("../../models/quiz");
 
 function registerGetRoutes(router) {
-  
+  // Human-written question count for a course (must be before GET /:courseId)
+  router.get("/:courseId/human-questions-count", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(courseId)) {
+        return res.status(400).json({ message: "Invalid courseId" });
+      }
+      const count = await Question.countDocuments({
+        course: courseId,
+        createdByType: "human",
+      });
+      return res.status(200).json({ count });
+    } catch (err) {
+      return res.status(500).json({
+        message: `Server error counting human questions: ${err.message}`,
+      });
+    }
+  });
+
   // Get latest quiz for a course
   router.get("/:courseId", async (req, res) => {
     try {

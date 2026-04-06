@@ -24,6 +24,12 @@ export async function getLatestQuiz(courseId) {
     }
 }
 
+// Count human-written questions for a course (from DB)
+export async function getHumanQuestionCount(courseId) {
+  const res = await client.get(`/api/quiz/${courseId}/human-questions-count`);
+  return res.data;
+}
+
 // Create a single human-contributed question for a course
 export async function createQuestion(courseId, payload) {
   const res = await client.post(`/api/quiz/${courseId}/question`, payload);
