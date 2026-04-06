@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { App } from "antd";
 import { login } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { GoogleIcon, EyeIcon, EyeOffIcon } from "../ui/icons";
 
 export default function Login({ onSwitchToRegister }) {
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { refreshUser } = useAuth();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -43,8 +45,7 @@ export default function Login({ onSwitchToRegister }) {
 
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
-
-      await new Promise(resolve => setTimeout(resolve, 3000)); // wait 3 seconds
+      await refreshUser();
       navigate("/");
     } catch (err) {
       const msg = err?.message || "Login failed";

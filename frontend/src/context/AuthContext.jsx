@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getMe } from "../api/authApi";
 
 const AuthContext = createContext(null);
@@ -35,27 +35,27 @@ export function AuthProvider({ children }) {
     boot();
   }, []);
 
-  function loginWithTokens({ accessToken, refreshToken }, fetchedUser = null) {
+  const loginWithTokens = useCallback(({ accessToken, refreshToken }, fetchedUser = null) => {
     localStorage.setItem("accessToken", accessToken);
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
     // if you already know user (optional), set it instantly
     if (fetchedUser) setUser(fetchedUser);
-  }
+  }, []);
 
-  async function refreshUser() {
+  const refreshUser = useCallback(async () => {
     const data = await getMe();
     const fetchedUser = data?.user ?? data;
     setUser(fetchedUser);
     return fetchedUser;
-  }
+  }, []);
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setUser(null);
-  }
+  }, []);
 
-  const value = useMemo( // creates a stable object so components don’t re-render unnecessarily
+  const value = useMemo(
     () => ({
       user,
       setUser,
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
       refreshUser,
       logout,
     }),
-    [user, loading]
+    [user, loading, loginWithTokens, refreshUser, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

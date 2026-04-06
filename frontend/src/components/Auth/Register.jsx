@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { App } from "antd";
 import { register, login } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { GoogleIcon, EyeIcon, EyeOffIcon } from "../ui/icons";
 
 export default function Register({ onSwitchToLogin }) {
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { refreshUser } = useAuth();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -62,8 +64,7 @@ export default function Register({ onSwitchToLogin }) {
       const { accessToken, refreshToken } = await login({ email, password });
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
-
-      setTimeout(() => {}, 3000); // code to run after 3 seconds
+      await refreshUser();
       navigate("/");
     } catch (err) {
       const msg = err?.message || "Something went wrong";
