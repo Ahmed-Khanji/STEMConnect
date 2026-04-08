@@ -105,7 +105,7 @@ export default function Course() {
         <button
           type="button"
           onClick={() => setListOpen(true)}
-          className="absolute top-4 left-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition"
+          className="absolute top-4 left-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition text-gray-900"
           aria-label="Show course list"
         >
           <Menu size={20} />
@@ -138,7 +138,7 @@ export default function Course() {
         <button
           type="button"
           onClick={() => setQuickOpen(v => !v)}
-          className="absolute top-4 right-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition"
+          className="absolute top-4 right-4 z-50 rounded-xl border bg-white/90 p-2 shadow-sm hover:bg-white transition text-gray-900"
           aria-label={quickOpen ? "Hide quick actions" : "Show quick actions"}
         >
           {quickOpen ? <X size={20} /> : <Menu size={20} />}

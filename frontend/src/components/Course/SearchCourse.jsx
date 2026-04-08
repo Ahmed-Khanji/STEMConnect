@@ -157,7 +157,7 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
             onKeyDown={handleKeyDown}
             placeholder="Search courses by name or code..."
             className="w-full h-12 sm:h-14 pl-12 pr-12 rounded-2xl bg-white/70 border border-white/40 shadow-sm outline-none
-                       ring-1 ring-gray-400 focus:ring-2"
+                       ring-1 ring-gray-400 focus:ring-2 text-gray-900 placeholder:text-gray-500"
           />
 
           {/* right icon: loading */}

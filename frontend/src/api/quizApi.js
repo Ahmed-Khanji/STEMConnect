@@ -16,12 +16,12 @@ export async function createQuiz(courseId, { topic, questionCount = 5, durationS
 
 // Get the latest quiz for a course
 export async function getLatestQuiz(courseId) {
-    try {
-      const res = await client.get(`/api/quiz/${courseId}`);
-      return res.data;
-    } catch (err) {
-      throw err
-    }
+  try {
+    const res = await client.get(`/api/quiz/${courseId}`);
+    return res.data;
+  } catch (err) {
+    throw err
+  }
 }
 
 // Count human-written questions for a course (from DB)

@@ -30,6 +30,7 @@ function registerGetRoutes(router) {
 
       const quiz = await Quiz.findOne({ course: courseId })
         .sort({ createdAt: -1 })
+        .populate("questions")
         .lean();
       if (!quiz)
         return res.status(404).json({ message: "No quiz found for this course" });
