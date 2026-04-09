@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-// Backend socket URL 
-const SOCKET_URL = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+// Backend socket URL (proxy)
+const socketUrl = import.meta.env.VITE_API_BASE || window.location.origin;
 
 export function useChatSocket(token) {
   const socketRef = useRef(null);
@@ -13,7 +13,7 @@ export function useChatSocket(token) {
     // Prevent multiple socket connections
     if (socketRef.current) return;
     // Create socket connection
-    const socket = io(SOCKET_URL, {
+    const socket = io(socketUrl, {
       transports: ["websocket"],
       withCredentials: true,
       auth: { token },
