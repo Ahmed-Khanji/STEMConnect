@@ -14,8 +14,8 @@ function extractText(resp) {
     );
 }
 
-async function generateQuizQuestions(topic, questionCount, questions) {
-  const prompt = quizCuratorPrompt(topic, questionCount, questions);
+async function generateQuizQuestions(courseName, questionCount, questions) {
+  const prompt = quizCuratorPrompt(courseName, questionCount, questions);
 
   try {
     const response = await ai.models.generateContent({

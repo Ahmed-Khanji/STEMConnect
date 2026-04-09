@@ -1,10 +1,9 @@
 import client, { handleError } from "./client";
 
 // Create a new quiz for a course
-export async function createQuiz(courseId, { topic, questionCount = 5, durationSeconds = 300 }) {
+export async function createQuiz(courseId, { questionCount = 5, durationSeconds = 300 } = {}) {
     try {
       const res = await client.post(`/api/quiz/${courseId}`, {
-        topic,
         questionCount,
         durationSeconds,
       });

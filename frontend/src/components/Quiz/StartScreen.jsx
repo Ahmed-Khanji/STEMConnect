@@ -20,8 +20,6 @@ export default function StartScreen({ course, onStart, isDarkMode, toggleDarkMod
   // dynamic display
   const title = course?.name || "Your Course";
   const code = course?.code || "—";
-
-  // later can be made dynamic
   const durationMinutes = 5;
   const questionCount = 5;
 

@@ -10,7 +10,7 @@ i18n
   .init({
 		lng: "en",            // always start in English
     fallbackLng: "en", // Change this to your default language, e.g., "fr" or "ar"
-    debug: true, // Set to false in production to hide debug logs
+    debug: false, // Set to false in production to hide debug logs
     interpolation: {
       escapeValue: false,
     },

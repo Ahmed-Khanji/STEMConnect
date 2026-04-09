@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Course = require("../../models/Course");
 const { Quiz, Question } = require("../../models/quiz");
 const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/geminiService");
 
@@ -42,16 +43,17 @@ function registerPostRoutes(router) {
   router.post("/:courseId", async (req, res) => {
     try {
       const { courseId } = req.params;
-      const { topic, questionCount = 5, durationSeconds = 300 } = req.body;
+      const { questionCount = 5, durationSeconds = 300 } = req.body;
 
       // Validations
       if (!mongoose.Types.ObjectId.isValid(courseId)) {
         return res.status(400).json({ message: "Invalid courseId" });
       }
-      const cleanTopic = String(topic || "").trim();
-      if (!cleanTopic) {
-        return res.status(400).json({ message: "topic is required" });
+      const course = await Course.findById(courseId).lean();
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
       }
+      const courseName = String(course.name || "").trim();
       const qc = Math.max(1, Math.min(Number(questionCount) || 5, 100));
       const dur = Math.max(30, Math.min(Number(durationSeconds) || 300, 60 * 60));
 
@@ -68,7 +70,7 @@ function registerPostRoutes(router) {
         });
       }
 
-      const generated = await generateQuizQuestions(cleanTopic, qc, candidates);
+      const generated = await generateQuizQuestions(courseName, qc, candidates);
 
       const existingQuestions = await Question.find(
         { course: courseId },
@@ -106,7 +108,6 @@ function registerPostRoutes(router) {
 
       const quiz = await Quiz.create({
         course: courseId,
-        topic: cleanTopic,
         questionCount: qc,
         durationSeconds: dur,
         questions: saved.map((d) => d._id),

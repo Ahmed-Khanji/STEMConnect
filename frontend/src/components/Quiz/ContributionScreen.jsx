@@ -54,6 +54,7 @@ export default function ContributionScreen({
 }) {
     const { user } = useAuth();
     const userId = user?.userId ?? "";
+    const courseId = course?._id;
 
     /** Human question count for this course; null until first fetch completes */
     const [humanQuestionCount, setHumanQuestionCount] = useState(null);
@@ -67,7 +68,6 @@ export default function ContributionScreen({
     const isLoading = toast.show && toast.type === "loading"; // not a state cause depend on a state
 
     useEffect(() => {
-      const courseId = course?._id;
       if (!courseId) {
         setHumanQuestionCount(null);
         return;
@@ -88,7 +88,7 @@ export default function ContributionScreen({
       return () => {
         cancelled = true;
       };
-    }, [course?._id]);
+    }, [courseId]);
 
     // Resets the form back to its initial state
     function resetForm() {
@@ -157,7 +157,7 @@ export default function ContributionScreen({
       showToast("Please confirm your submission", "error");
       return;
     }
-    if (!course?._id) {
+    if (!courseId) {
       showToast("Course not found", "error");
       return;
     }

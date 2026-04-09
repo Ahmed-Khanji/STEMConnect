@@ -1,11 +1,11 @@
 // Builds the prompt for selecting and curating quiz questions from candidates.
-function quizCuratorPrompt(topic, questionCount, questions) {
+function quizCuratorPrompt(courseName, questionCount, questions) {
   return `
         You are an assessment-quality validator and quiz curator.
 
-        Topic: ${topic}
+        Course: ${courseName}
 
-        You will receive a list of candidate questions (mixed quality, possibly redundant). Each candidate may be MCQ or short-answer.
+        You will receive a list of candidate questions (mixed quality, possibly redundant) written for this course. Each candidate may be MCQ or short-answer.
 
         Your tasks:
         1. Evaluate all provided questions.
@@ -15,13 +15,13 @@ function quizCuratorPrompt(topic, questionCount, questions) {
         5. Increase difficulty for at most 3 questions (subtle depth increase only).
 
         Selection criteria (all required):
-        - Strong relevance to ${topic}
+        - Strong alignment with this course and the candidate pool (same subject matter and level as the inputs)
         - Clear wording with exactly one correct answer
         - Tests conceptual understanding, not trivia or trick questions
         - High likelihood of correctness
         - Allows a clear, short explanation
         - Balanced difficulty: ~3 easy, ~4 medium, ~3 hard
-        - Covers multiple subtopics
+        - Covers multiple subtopics within the course
 
         Rejection rules:
         - Reject vague, redundant, misleading, or incorrect questions

@@ -51,8 +51,7 @@ export default function Quiz() {
 
   // Starts the quiz flow: try get latest quiz, otherwise create, otherwise redirect to contribution
   async function startQuiz() {
-    if (!courseId) return;
-    if (!course) return; // course still loading or missing
+    if (!courseId) return; // course still loading or missing
 
     setView("loading");
     try {
@@ -66,8 +65,9 @@ export default function Quiz() {
     }
     catch (err) {
       const status = err?.response?.status;
-      // 404 = no quiz yet → create one
+      // 404 = no quiz yet → create one (will exit the catch block)
       if (status !== 404) {
+        // if not 404, something went wrong
         alert("Could not load quiz. Please try again.");
         setView("landing");
         return;
@@ -77,11 +77,9 @@ export default function Quiz() {
     // create quiz if none exists
     try {
       // TODO: you can decide these values from UI later
-      const topic = "General";
       const questionCount = 5;
       const durationSeconds = 300;
-
-      const created = await createQuiz(courseId, { topic, questionCount, durationSeconds });
+      const created = await createQuiz(courseId, { questionCount, durationSeconds });
       if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(created?.questions) ? created.questions : [];
       setQuestions(qs);
