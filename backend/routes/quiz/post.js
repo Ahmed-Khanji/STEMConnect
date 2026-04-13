@@ -1,15 +1,8 @@
 const mongoose = require("mongoose");
 const Course = require("../../models/Course");
-const { Quiz, Question } = require("../../models/quiz");
+const { Quiz, Question, QuizAttempt } = require("../../models/quiz");
 const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/geminiService");
-
-function normalizeText(str) {
-  return String(str)
-    .toLowerCase()
-    .replace(/[^\w\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const { assertCourseAccess, normalizeText, parseQuizAttemptBody } = require("../../utils/quizUtils");
 
 function registerPostRoutes(router) {
   // Generate AI explanation for a question (must be before /:courseId)
@@ -167,8 +160,47 @@ function registerPostRoutes(router) {
   });
 
   // Submit a quiz attempt (answers + score)
-  router.post("/quizzes/:quizId/attempts", (req, res) => {
-    // TODO
+  router.post("/quizzes/:quizId/attempts", async (req, res) => {
+    try {
+      const { quizId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(quizId))
+        return res.status(400).json({ message: "Invalid quizId" });
+      const quiz = await Quiz.findById(quizId).lean();
+      if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+      await assertCourseAccess(quiz.course, req.user.userId);
+
+      const p = parseQuizAttemptBody(quiz, req.body);
+      if (!p.ok) return res.status(p.status).json({ message: p.message });
+
+      const doc = {
+        quiz: quizId,
+        course: quiz.course,
+        user: req.user.userId,
+        score: p.s,
+        total: p.t,
+        timeTakenSeconds: p.secs,
+        answers: p.answers,
+        startedAt: p.startedAt ?? new Date(Date.now() - 5 * 60 * 1000), // default 5 minutes ago
+        completedAt: p.completedAt ?? new Date(),
+      };
+
+      const hadAttempt = await QuizAttempt.exists({
+        quiz: quizId,
+        user: req.user.userId,
+      });
+
+      const saved = await QuizAttempt.findOneAndUpdate(
+        { quiz: quizId, user: req.user.userId },
+        { $set: doc },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      );
+
+      return res.status(hadAttempt ? 200 : 201).json(saved);
+    } catch (err) {
+      const status = err.status || 500;
+      if (status >= 500) console.error("quiz attempt:", err?.message || err);
+      return res.status(status).json({ message: err.message || "Server error saving attempt" });
+    }
   });
 }
 

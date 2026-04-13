@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
 import CourseList from "../components/Course/CourseList";
 import ChatArea from "../components/Course/ChatArea";
@@ -11,6 +12,9 @@ import { getMyCourses, leaveCourse } from "../api/courseApi";
 import { Menu, X } from "lucide-react";
 
 export default function Course() {
+  const { courseId: courseIdFromRoute } = useParams();
+  const navigate = useNavigate();
+
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,13 +32,33 @@ export default function Course() {
         setLoading(true);
         const data = await getMyCourses();
         setCourses(data);
-        setSelectedCourse(data[0] || null);
       } finally {
         setLoading(false);
       }
     }
     loadCourses();
   }, []);
+
+  // Keep selection in sync with /courses/:courseId (e.g. back from quiz deep-link)
+  useEffect(() => {
+    if (loading) return;
+    if (!courses.length) {
+      setSelectedCourse(null);
+      return;
+    }
+    if (courseIdFromRoute) {
+      const match = courses.find(c => String(c._id) === String(courseIdFromRoute));
+      if (match) {
+        setSelectedCourse(match);
+      } else {
+        const first = courses[0];
+        setSelectedCourse(first);
+        navigate(`/courses/${first._id || first.id}`, { replace: true });
+      }
+    } else {
+      setSelectedCourse(courses[0] || null);
+    }
+  }, [loading, courses, courseIdFromRoute, navigate]);
 
   function handleSelectCourse(course) {
     setCourses((prev) => {
@@ -43,24 +67,34 @@ export default function Course() {
       return exists ? prev : [course, ...prev];
     });
     setSelectedCourse(course);
+    const id = course?._id || course?.id;
+    if (id) navigate(`/courses/${id}`, { replace: true });
   }
 
   function handleCourseCreated(created) {
     setCourses((prev) => [created, ...prev]);
     setSelectedCourse(created);
+    const id = created?._id || created?.id;
+    if (id) navigate(`/courses/${id}`, { replace: true });
   }
 
   async function handleDropCourse(courseId) {
     try {
       await leaveCourse(courseId);
-      // remove the course from the list
-      setCourses((prev) => prev.filter((c) => (c._id || c.id) !== courseId));
-      // update the selected course if it was the one dropped
-      setSelectedCourse((prevSelected) => {
-        const prevId = prevSelected?._id || prevSelected?.id;
-        if (prevId !== courseId) return prevSelected;
-        const remaining = courses.filter((c) => (c._id || c.id) !== courseId);
-        return remaining[0] || null;
+      setCourses((prev) => {
+        const next = prev.filter((c) => (c._id || c.id) !== courseId);
+        setSelectedCourse((prevSelected) => {
+          const prevId = prevSelected?._id || prevSelected?.id;
+          if (String(prevId) !== String(courseId)) return prevSelected;
+          const first = next[0] || null;
+          if (first) {
+            navigate(`/courses/${first._id || first.id}`, { replace: true });
+          } else {
+            navigate("/courses", { replace: true });
+          }
+          return first;
+        });
+        return next;
       });
     } catch (err) {
       console.error("Drop failed:", err);
@@ -120,7 +154,7 @@ export default function Course() {
         <CourseList
           courses={courses}
           selectedCourse={selectedCourse}
-          onSelectCourse={setSelectedCourse}
+          onSelectCourse={handleSelectCourse}
           onDropCourse={handleDropCourse}
           listOpen={listOpen} // later
           onToggleList={() => setListOpen(v => !v)}

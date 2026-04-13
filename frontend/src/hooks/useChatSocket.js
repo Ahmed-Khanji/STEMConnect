@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-// Backend socket URL (proxy)
-const socketUrl = import.meta.env.VITE_API_BASE || window.location.origin;
+// Socket (browser) connects directly to API host (server)
+const socketUrl = import.meta.env.VITE_API_BASE || "http://localhost:3000";
 
 export function useChatSocket(token) {
   const socketRef = useRef(null);

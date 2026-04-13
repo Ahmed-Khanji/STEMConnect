@@ -14,7 +14,13 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-export default function StartScreen({ course, onStart, isDarkMode, toggleDarkMode }) {
+export default function StartScreen({
+  course,
+  onStart,
+  classAverage,
+  isDarkMode,
+  toggleDarkMode,
+}) {
   const navigate = useNavigate();
 
   // dynamic display
@@ -46,7 +52,7 @@ export default function StartScreen({ course, onStart, isDarkMode, toggleDarkMod
 
       <StatsCards durationMinutes={durationMinutes} questionCount={questionCount} />
 
-      <CompletionBanner />
+      <CompletionBanner classAverage={classAverage} />
 
       <Instructions courseName={title} />
 
@@ -140,25 +146,67 @@ function StatCard({ icon, iconWrapClass, label, value }) {
   );
 }
 
-function CompletionBanner() {
+function CompletionBanner({ classAverage }) {
+  const status = classAverage?.status ?? "loading";
+  const subtitle =
+    status === "no-quiz"
+      ? "Class average appears after the first quiz exists for this course."
+      : status === "no-attempts"
+        ? "No attempts recorded yet—be the first to finish."
+        : "Across all students in the course";
+
+  const valueEl = (() => {
+    if (status === "loading") {
+      return (
+        <span className="text-xl font-bold text-pink-500/50 tabular-nums animate-pulse" aria-hidden>
+          …
+        </span>
+      );
+    }
+    if (status === "no-quiz") {
+      return (
+        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          No quiz yet
+        </span>
+      );
+    }
+    if (status === "no-attempts") {
+      return (
+        <span className="text-sm font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          No data yet
+        </span>
+      );
+    }
+    if (status === "ready") {
+      return (
+        <span className="text-xl font-bold text-pink-500 tabular-nums">
+          {classAverage.percent}%
+        </span>
+      );
+    }
+    return (
+      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400" title="Could not load stats">
+        —
+      </span>
+    );
+  })();
+
   return (
-    <div className="bg-pink-50 dark:bg-pink-900/10 rounded-2xl p-5 flex items-center justify-between border border-pink-100 dark:border-pink-900/30 transition-colors">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-white dark:bg-[#1f2937] rounded-xl flex items-center justify-center text-pink-500 shadow-sm transition-colors">
+    <div className="bg-pink-50 dark:bg-pink-900/10 rounded-2xl p-5 flex items-center justify-between gap-3 border border-pink-100 dark:border-pink-900/30 transition-colors">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className="w-12 h-12 shrink-0 bg-white dark:bg-[#1f2937] rounded-xl flex items-center justify-center text-pink-500 shadow-sm transition-colors">
           <Users size={20} />
         </div>
 
-        <div>
+        <div className="min-w-0 text-left">
           <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
             Overall Quiz Average
           </h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            Across all students in the course
-          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{subtitle}</p>
         </div>
       </div>
 
-      <span className="text-xl font-bold text-pink-500">68%</span>
+      <div className="shrink-0 text-right">{valueEl}</div>
     </div>
   );
 }

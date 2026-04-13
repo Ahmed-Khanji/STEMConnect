@@ -13,6 +13,7 @@ const attemptAnswerSchema = new mongoose.Schema(
 const quizAttemptSchema = new mongoose.Schema(
   {
     quiz: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true, index: true },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, index: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     score: { type: Number, default: 0, min: 0 }, // number of correct answers
     total: { type: Number, required: true, min: 1 }, // number of questions
@@ -24,9 +25,9 @@ const quizAttemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Give me the latest attempt of THIS user for THIS quiz
-quizAttemptSchema.index({ user: 1, quiz: 1, startedAt: -1 });
-// Show me recent attempts for a quiz in a course
-quizAttemptSchema.index({ course: 1, quiz: 1, startedAt: -1 });
+// Lookup by user + quiz (resubmit overwrites via findOneAndUpdate)
+quizAttemptSchema.index({ user: 1, quiz: 1 });
+// Recent attempts for a quiz in a course (stats / admin)
+quizAttemptSchema.index({ course: 1, quiz: 1, completedAt: -1 });
 
 module.exports = mongoose.model("QuizAttempt", quizAttemptSchema);

@@ -40,3 +40,21 @@ export async function generateExplanation(payload) {
   const res = await client.post("/api/quiz/generate-explanation", payload);
   return res.data;
 }
+
+// Class / aggregate stats for a quiz (attempt averages, etc.)
+export async function getQuizStats(quizId) {
+  const res = await client.get(`/api/quiz/quizzes/${quizId}/stats`);
+  return res.data;
+}
+
+// Submit a completed quiz attempt for score tracking
+export async function submitQuizAttempt(quizId, payload) {
+  const res = await client.post(`/api/quiz/quizzes/${quizId}/attempts`, payload);
+  return res.data;
+}
+
+// Get the current user's attempt(s) for a specific quiz
+export async function getMyAttempts(quizId) {
+  const res = await client.get(`/api/quiz/quizzes/${quizId}/my-attempts`);
+  return res.data;
+}

@@ -1,10 +1,12 @@
+import { useState, useEffect } from "react";
 import { FileText, Zap, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getLatestQuiz, getMyAttempts } from "@/api/quizApi";
 
 export default function QuickActions({ course }) {
   const navigate = useNavigate();
   const courseId = course?._id || course?.id;
-  
+
   function handleAction(action) {
     if (!courseId) return;
     if (action === "QUIZ") navigate(`/courses/${courseId}/quiz`);
@@ -39,7 +41,122 @@ export default function QuickActions({ course }) {
         onClick={() => handleAction("EXAM")}
       />
 
-      <ProgressCard />
+      <ProgressCard courseId={courseId} />
+    </div>
+  );
+}
+
+// Returns { label, name, percent } for the current semester progress
+function getSemesterProgress() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-based
+
+  let name, start, end;
+
+  if (month <= 4) {
+    name = `Winter ${year}`;
+    start = new Date(year, 0, 1);   // Jan 1
+    end   = new Date(year, 4, 31);  // May 31
+  } else if (month <= 7) {
+    name = `Summer ${year}`;
+    start = new Date(year, 5, 1);   // Jun 1
+    end   = new Date(year, 7, 31);  // Aug 31
+  } else {
+    name = `Fall ${year}`;
+    start = new Date(year, 8, 1);   // Sep 1
+    end   = new Date(year, 11, 31); // Dec 31
+  }
+
+  const totalMonths   = end - start;
+  const elapsedMonths = Math.max(0, now - start);
+  const percent   = Math.min(100, Math.round((elapsedMonths / totalMonths) * 100));
+
+  return { name, percent };
+}
+
+function ProgressCard({ courseId }) {
+  const [quizAvg, setQuizAvg] = useState(null); // null = loading, false = no data, 0-100 = value
+  const semester = getSemesterProgress();
+
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const quiz = await getLatestQuiz(courseId);
+        if (cancelled) return;
+        if (!quiz?._id) { setQuizAvg(false); return; }
+
+        const attempts = await getMyAttempts(quiz._id);
+        if (cancelled) return;
+        const latest = Array.isArray(attempts) ? attempts[0] : null;
+        if (!latest) { setQuizAvg(false); return; }
+
+        const pct = latest.total > 0
+          ? Math.round((latest.score / latest.total) * 100)
+          : false;
+        setQuizAvg(pct);
+      } catch {
+        if (!cancelled) setQuizAvg(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [courseId]);
+
+  const quizLabel =
+    quizAvg === null  ? "…" :
+    quizAvg === false ? "—" :
+    `${quizAvg}%`;
+
+  return (
+    <div className="rounded-2xl pt-5 mb-4 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <h4 className="text-gray-900">Your Progress</h4>
+      </div>
+
+      <div className="space-y-3">
+        <ProgressRow
+          label="Course Completion"
+          valueLabel={`${semester.percent}%`}
+          percent={semester.percent}
+          barClass="bg-gradient-to-r from-blue-500 to-purple-500"
+          sublabel={semester.name}
+        />
+
+        <ProgressRow
+          label="Quiz Average"
+          valueLabel={quizLabel}
+          percent={typeof quizAvg === "number" ? quizAvg : 0}
+          barClass="bg-gradient-to-r from-green-500 to-emerald-500"
+          sublabel={quizAvg === false ? "No attempt yet" : quizAvg === null ? "" : null}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, valueLabel, percent, barClass, sublabel }) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-gray-600">{label}</span>
+        <span className="text-gray-900 font-semibold tabular-nums">{valueLabel}</span>
+      </div>
+
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {sublabel != null && (
+        <p className="text-xs text-gray-400 mt-1">{sublabel}</p>
+      )}
     </div>
   );
 }
@@ -88,52 +205,5 @@ function ActionCard({
         <span>{meta}</span>
       </div>
     </button>
-  );
-}
-
-function ProgressCard() {
-  return (
-    <div className="rounded-2xl pt-5 mb-4 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <h4 className="text-gray-900">Your Progress</h4>
-      </div>
-
-      <div className="space-y-3">
-        <ProgressRow
-          label="Course Completion"
-          valueLabel="68%"
-          widthClass="w-[68%]"
-          barClass="bg-gradient-to-r from-blue-500 to-purple-500"
-        />
-
-        <ProgressRow
-          label="Quiz Average"
-          valueLabel="85%"
-          widthClass="w-[85%]"
-          barClass="bg-gradient-to-r from-green-500 to-emerald-500"
-        />
-      </div>
-    </div>
-  );
-}
-
-function ProgressRow({ label, valueLabel, widthClass, barClass }) {
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-600">{label}</span>
-        <span className="text-gray-900">{valueLabel}</span>
-      </div>
-
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`
-            h-full rounded-full
-            ${widthClass}
-            ${barClass}
-          `}
-        />
-      </div>
-    </div>
   );
 }

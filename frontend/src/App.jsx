@@ -16,6 +16,7 @@ function App() {
         <Route path="/test" element={<Test />} />
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/courses/:courseId" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
         {/* <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} /> */}

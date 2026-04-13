@@ -1,7 +1,7 @@
 import React from "react";
 import { Trophy, Frown } from "lucide-react";
 
-export default function ResultScreen({ score, total, onRestart }) {
+export default function ResultScreen({ score, total, onRestart, onBackToCourse }) {
   // Compute result stats
   const percentage = Math.round((score / total) * 100);
   const isPass = percentage >= 60;
@@ -14,12 +14,13 @@ export default function ResultScreen({ score, total, onRestart }) {
         percentage={percentage}
         isPass={isPass}
         onRestart={onRestart}
+        onBackToCourse={onBackToCourse}
       />
     </div>
   );
 }
 
-function ResultCard({ score, total, percentage, isPass, onRestart }) {
+function ResultCard({ score, total, percentage, isPass, onRestart, onBackToCourse }) {
   return (
     <div className="bg-white dark:bg-[#1f2937] rounded-3xl p-10 shadow-soft flex flex-col items-center transition-colors">
       <ResultIcon isPass={isPass} />
@@ -28,7 +29,10 @@ function ResultCard({ score, total, percentage, isPass, onRestart }) {
 
       <StatsRow score={score} total={total} percentage={percentage} />
 
-      <RestartButton onRestart={onRestart} />
+      <div className="w-full flex flex-col gap-3">
+        <RestartButton onRestart={onRestart} />
+        <BackToCourseButton onClick={onBackToCourse} />
+      </div>
     </div>
   );
 }
@@ -89,10 +93,23 @@ function StatBox({ label, value, valueClass }) {
 function RestartButton({ onRestart }) {
   return (
     <button
+      type="button"
       onClick={onRestart}
       className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-500/20 hover:brightness-110 active:scale-[0.98] transition-all"
     >
       Try Again
+    </button>
+  );
+}
+
+function BackToCourseButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full py-4 rounded-2xl font-bold border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/80 active:scale-[0.98] transition-all"
+    >
+      Back to course
     </button>
   );
 }

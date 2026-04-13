@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { getCourseById } from "@/api/courseApi";
-import { getLatestQuiz, createQuiz } from "@/api/quizApi";
+import { getLatestQuiz, createQuiz, submitQuizAttempt, getQuizStats } from "@/api/quizApi";
 import {
   clearQuizContributionState,
   shouldShowNeedMoreFromOthers,
@@ -17,6 +17,8 @@ import ContributionScreen from "@/components/Quiz/ContributionScreen";
 export default function Quiz() {
   const [view, setView] = useState("landing"); // "loading", "quiz", "result", "contribution"
   const [questions, setQuestions] = useState([]);
+  const [quizId, setQuizId] = useState(null);
+  const [durationSeconds, setDurationSeconds] = useState(300);
   const [finalScore, setFinalScore] = useState(0);
   const [needContribution, setNeedContribution] = useState(false);
 
@@ -28,6 +30,57 @@ export default function Quiz() {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Landing banner: no stats API when no quiz (404); zero attempts → "No data yet" in UI
+  const [classAverage, setClassAverage] = useState({ status: "loading" });
+  const attemptSubmittedRef = useRef(false);
+
+  // Class average on landing: only fetch stats if a quiz exists for the course
+  useEffect(() => {
+    if (view !== "landing" || !courseId) return;
+    let cancelled = false;
+
+    async function loadClassAverage() {
+      setClassAverage({ status: "loading" });
+      let quiz;
+      try {
+        quiz = await getLatestQuiz(courseId);
+      } catch (err) {
+        if (cancelled) return;
+        if (err?.response?.status === 404) {
+          setClassAverage({ status: "no-quiz" });
+          return;
+        }
+        setClassAverage({ status: "error" });
+        return;
+      }
+      const qid = quiz?._id;
+      if (!qid) {
+        if (!cancelled) setClassAverage({ status: "no-quiz" });
+        return;
+      }
+      try {
+        const data = await getQuizStats(qid);
+        if (cancelled) return;
+        const attemptCount = data?.stats?.attemptCount ?? 0;
+        if (attemptCount === 0) {
+          setClassAverage({ status: "no-attempts" });
+        } else {
+          setClassAverage({
+            status: "ready",
+            percent: data.stats.avgScorePercent,
+            attemptCount,
+          });
+        }
+      } catch {
+        if (!cancelled) setClassAverage({ status: "error" });
+      }
+    }
+
+    loadClassAverage();
+    return () => {
+      cancelled = true;
+    };
+  }, [view, courseId]);
 
   // load selected course data
   useEffect(() => {
@@ -53,12 +106,17 @@ export default function Quiz() {
   async function startQuiz() {
     if (!courseId) return; // course still loading or missing
 
+    attemptSubmittedRef.current = false;
     setView("loading");
     try {
       // try fetch latest quiz
       const existing = await getLatestQuiz(courseId);
       if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(existing?.questions) ? existing.questions : [];
+      setQuizId(existing?._id ?? null);
+      setDurationSeconds(
+        typeof existing?.durationSeconds === "number" ? existing.durationSeconds : 300
+      );
       setQuestions(qs);
       setView("quiz");
       return;
@@ -82,6 +140,10 @@ export default function Quiz() {
       const created = await createQuiz(courseId, { questionCount, durationSeconds });
       if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(created?.questions) ? created.questions : [];
+      setQuizId(created?._id ?? null);
+      setDurationSeconds(
+        typeof created?.durationSeconds === "number" ? created.durationSeconds : durationSeconds
+      );
       setQuestions(qs);
       setView("quiz");
     }
@@ -109,14 +171,38 @@ export default function Quiz() {
   }
 
 
-  function handleComplete(score) {
-    setFinalScore(score);
-    setView("result");
-  }
+  const handleComplete = useCallback(
+    async ({ score, answers, timeTakenSeconds }) => {
+      setFinalScore(score);
+      if (quizId && questions.length > 0) {
+        if (attemptSubmittedRef.current) {
+          setView("result");
+          return;
+        }
+        attemptSubmittedRef.current = true;
+        try {
+          await submitQuizAttempt(quizId, {
+            score,
+            total: questions.length,
+            timeTakenSeconds,
+            answers,
+          });
+        } catch (err) {
+          console.error("Failed to save quiz attempt:", err);
+          attemptSubmittedRef.current = false;
+        }
+      }
+      setView("result");
+    },
+    [quizId, questions.length]
+  );
 
   function resetQuiz() {
+    attemptSubmittedRef.current = false;
     setView("landing");
     setQuestions([]);
+    setQuizId(null);
+    setDurationSeconds(300);
     setFinalScore(0);
   }
 
@@ -126,6 +212,7 @@ export default function Quiz() {
         <StartScreen
           course={course}
           onStart={startQuiz}
+          classAverage={classAverage}
           isDarkMode={isDark}
           toggleDarkMode={toggleTheme}
         />
@@ -148,6 +235,7 @@ export default function Quiz() {
       {view === "quiz" && (
         <QuizScreen
           questions={questions}
+          durationSeconds={durationSeconds}
           onComplete={handleComplete}
           onExit={resetQuiz}
           isDarkMode={isDark}
@@ -160,6 +248,7 @@ export default function Quiz() {
           score={finalScore}
           total={questions.length}
           onRestart={resetQuiz}
+          onBackToCourse={() => navigate(`/courses/${courseId}`)}
         />
       )}
 
@@ -175,7 +264,12 @@ export default function Quiz() {
           needContribution={needContribution}
           onQuizCreated={(quiz) => {
             if (userId) clearQuizContributionState(userId, courseId);
+            attemptSubmittedRef.current = false;
             const qs = Array.isArray(quiz?.questions) ? quiz.questions : [];
+            setQuizId(quiz?._id ?? null);
+            setDurationSeconds(
+              typeof quiz?.durationSeconds === "number" ? quiz.durationSeconds : 300
+            );
             setQuestions(qs);
             setView("quiz");
           }}
