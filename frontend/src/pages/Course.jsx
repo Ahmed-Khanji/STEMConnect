@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import CourseList from "../components/Course/CourseList";
@@ -7,7 +7,8 @@ import QuickActions from "../components/Course/QuickActions";
 import SearchCourse from "../components/Course/SearchCourse";
 import CreateCourseModal from "../components/Course/CreateCourseModal";
 
-import { getMyCourses, leaveCourse } from "../api/courseApi";
+import { getMyCourses, leaveCourse, getUnreadCounts } from "../api/courseApi";
+import { useChatSocket } from "@/hooks/useChatSocket";
 
 import { Menu, X } from "lucide-react";
 
@@ -15,9 +16,12 @@ export default function Course() {
   const { courseId: courseIdFromRoute } = useParams();
   const navigate = useNavigate();
 
+  const socket = useChatSocket(localStorage.getItem("accessToken"));
+
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   // modal open
   const [createOpen, setCreateOpen] = useState(false);
@@ -38,6 +42,43 @@ export default function Course() {
     }
     loadCourses();
   }, []);
+
+  // Fetch initial unread counts once courses are loaded
+  useEffect(() => {
+    if (loading || !courses.length) return;
+    getUnreadCounts()
+      .then((data) => setUnreadCounts(data?.unreadCounts ?? {}))
+      .catch(() => {});
+  }, [loading, courses.length]);
+
+  // Global socket listener: increment badge for any non-active course that gets a new message
+  const selectedCourseId = String(selectedCourse?._id || selectedCourse?.id || "");
+  const selectedCourseIdRef = useRef(selectedCourseId);
+  useEffect(() => {
+    selectedCourseIdRef.current = selectedCourseId;
+  });
+
+  useEffect(() => {
+    if (!socket || !courses.length) return;
+
+    // Join all enrolled course rooms so socket receives their messages
+    courses.forEach((c) => {
+      socket.emit("joinCourse", { courseId: String(c._id || c.id) });
+    });
+
+    function onNewMessage(msg) {
+      const msgCourseId = String(msg?.course ?? "");
+      // Active course messages are handled by useCourseRoom inside ChatArea
+      if (msgCourseId === selectedCourseIdRef.current) return;
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [msgCourseId]: (prev[msgCourseId] || 0) + 1,
+      }));
+    }
+
+    socket.on("newMessage", onNewMessage);
+    return () => socket.off("newMessage", onNewMessage);
+  }, [socket, courses, selectedCourseId]);
 
   // Keep selection in sync with /courses/:courseId (e.g. back from quiz deep-link)
   useEffect(() => {
@@ -61,13 +102,14 @@ export default function Course() {
   }, [loading, courses, courseIdFromRoute, navigate]);
 
   function handleSelectCourse(course) {
+    const id = String(course._id || course.id);
     setCourses((prev) => {
-      const cid = course._id || course.id;
-      const exists = prev.some((c) => (c._id || c.id) === cid);
+      const exists = prev.some((c) => String(c._id || c.id) === id);
       return exists ? prev : [course, ...prev];
     });
     setSelectedCourse(course);
-    const id = course?._id || course?.id;
+    // Clear unread badge immediately for the opened course
+    setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
     if (id) navigate(`/courses/${id}`, { replace: true });
   }
 
@@ -81,6 +123,12 @@ export default function Course() {
   async function handleDropCourse(courseId) {
     try {
       await leaveCourse(courseId);
+      // Remove unread entry for the dropped course
+      setUnreadCounts((prev) => {
+        const next = { ...prev };
+        delete next[String(courseId)];
+        return next;
+      });
       setCourses((prev) => {
         const next = prev.filter((c) => (c._id || c.id) !== courseId);
         setSelectedCourse((prevSelected) => {
@@ -152,17 +200,21 @@ export default function Course() {
         `}
       >
         <CourseList
-          courses={courses}
+          courses={courses.map((c) => ({
+            ...c,
+            unreadCount: unreadCounts[String(c._id || c.id)] || 0,
+          }))}
           selectedCourse={selectedCourse}
           onSelectCourse={handleSelectCourse}
           onDropCourse={handleDropCourse}
-          listOpen={listOpen} // later
+          listOpen={listOpen}
           onToggleList={() => setListOpen(v => !v)}
         />
       </div>
 
       <div className={`relative flex flex-1 min-w-0 ${!listOpen ? "pl-14" : ""}`}>
         <ChatArea
+          socket={socket}
           course={selectedCourse}
           onSelectCourse={handleSelectCourse}
           onCreateClick={() => setCreateOpen(true)}

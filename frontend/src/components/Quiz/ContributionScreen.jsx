@@ -3,17 +3,13 @@ import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle, S
 import {
   createQuestion,
   createQuiz,
-  getHumanQuestionCount,
   getLatestQuiz,
+  getContributionStatus,
   generateExplanation as generateExplanationApi,
 } from "@/api/quizApi";
-import { useAuth } from "@/context/AuthContext";
 import {
   MIN_HUMAN_QUESTIONS_FOR_QUIZ,
   USER_CONTRIBUTION_THRESHOLD,
-  bumpUserContribCount,
-  clearQuizContributionState,
-  setNeedMoreFromOthers,
 } from "@/lib/quizContributionStorage";
 
 /* ===== Small helpers ===== */
@@ -52,12 +48,13 @@ export default function ContributionScreen({
     onQuizCreated,
     onNeedMoreFromOthers,
 }) {
-    const { user } = useAuth();
-    const userId = user?.userId ?? "";
     const courseId = course?._id;
 
-    /** Human question count for this course; null until first fetch completes */
-    const [humanQuestionCount, setHumanQuestionCount] = useState(null);
+    // Thresholds from server (GET contribution-status on mount)
+    const [contribRules, setContribRules] = useState({
+      minHumanQuestionsForQuiz: MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+      userContributionThreshold: USER_CONTRIBUTION_THRESHOLD,
+    });
 
     const [questionForm, setQuestionForm] = useState(INITIAL_FORM);
     const [toast, setToast] = useState({
@@ -68,21 +65,20 @@ export default function ContributionScreen({
     const isLoading = toast.show && toast.type === "loading"; // not a state cause depend on a state
 
     useEffect(() => {
-      if (!courseId) {
-        setHumanQuestionCount(null);
-        return;
-      }
+      if (!courseId) return;
       let cancelled = false;
       (async () => {
         try {
-          const { count } = await getHumanQuestionCount(courseId);
-          if (!cancelled) {
-            setHumanQuestionCount(typeof count === "number" ? count : 0);
-          }
+          const data = await getContributionStatus(courseId);
+          if (cancelled) return;
+          setContribRules({
+            minHumanQuestionsForQuiz:
+              data.minHumanQuestionsForQuiz ?? MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+            userContributionThreshold:
+              data.userContributionThreshold ?? USER_CONTRIBUTION_THRESHOLD,
+          });
         } catch {
-          if (!cancelled) {
-            setHumanQuestionCount(0);
-          }
+          /* keep default contribRules */
         }
       })();
       return () => {
@@ -190,23 +186,21 @@ export default function ContributionScreen({
       } else {
         payload.correctAnswer = String(shortAnswer).trim();
       }
-      const created = await createQuestion(course._id, payload);
+      await createQuestion(course._id, payload);
 
-      setHumanQuestionCount((prev) =>
-        typeof prev === "number" ? prev + 1 : typeof created?.humanQuestionCount === "number"
-          ? created.humanQuestionCount
-          : 0
-      );
+      const status = await getContributionStatus(courseId);
+      const minPool = status.minHumanQuestionsForQuiz ?? contribRules.minHumanQuestionsForQuiz;
+      const userThr = status.userContributionThreshold ?? contribRules.userContributionThreshold;
       const nextHumanCount =
-        typeof humanQuestionCount === "number"
-          ? humanQuestionCount + 1
-          : typeof created?.humanQuestionCount === "number"
-            ? created.humanQuestionCount
-            : 0;
+        typeof status.humanQuestionCount === "number" ? status.humanQuestionCount : 0;
+      const myCount =
+        typeof status.myContributionCount === "number" ? status.myContributionCount : 0;
+      setContribRules({
+        minHumanQuestionsForQuiz: minPool,
+        userContributionThreshold: userThr,
+      });
 
-      const myContribTotal = userId ? bumpUserContribCount(userId, course._id) : 0;
-
-      if (nextHumanCount >= MIN_HUMAN_QUESTIONS_FOR_QUIZ) {
+      if (nextHumanCount >= minPool) {
         showToast("Creating quiz...", "loading");
         try {
           let quiz = null;
@@ -218,10 +212,9 @@ export default function ContributionScreen({
           if (!quizHasPopulatedQuestions(quiz)) {
             quiz = await createQuiz(course._id, {
               topic: payload.topic,
-              questionCount: MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+              questionCount: minPool,
             });
           }
-          if (userId) clearQuizContributionState(userId, course._id);
           if (onQuizCreated) onQuizCreated(quiz);
           return;
         } catch (createErr) {
@@ -235,12 +228,7 @@ export default function ContributionScreen({
         }
       }
 
-      if (
-        userId &&
-        myContribTotal >= USER_CONTRIBUTION_THRESHOLD &&
-        nextHumanCount < MIN_HUMAN_QUESTIONS_FOR_QUIZ
-      ) {
-        setNeedMoreFromOthers(userId, course._id);
+      if (myCount >= userThr && nextHumanCount < minPool) {
         setToast({ show: false, message: "", type: "success" });
         if (onNeedMoreFromOthers) onNeedMoreFromOthers();
         return;

@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
-import { useAuth } from "@/context/AuthContext";
 import { getCourseById } from "@/api/courseApi";
-import { getLatestQuiz, createQuiz, submitQuizAttempt, getQuizStats } from "@/api/quizApi";
 import {
-  clearQuizContributionState,
-  shouldShowNeedMoreFromOthers,
+  getLatestQuiz,
+  createQuiz,
+  submitQuizAttempt,
+  getQuizStats,
+  getContributionStatus,
+} from "@/api/quizApi";
+import {
+  MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+  USER_CONTRIBUTION_THRESHOLD,
 } from "@/lib/quizContributionStorage";
 
 import StartScreen from "@/components/Quiz/StartScreen";
@@ -23,8 +28,6 @@ export default function Quiz() {
   const [needContribution, setNeedContribution] = useState(false);
 
   const { isDark, toggleTheme } = useTheme();
-  const { user } = useAuth();
-  const userId = user?.userId ?? "";
 
   const navigate = useNavigate();
   const { courseId } = useParams();
@@ -111,7 +114,6 @@ export default function Quiz() {
     try {
       // try fetch latest quiz
       const existing = await getLatestQuiz(courseId);
-      if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(existing?.questions) ? existing.questions : [];
       setQuizId(existing?._id ?? null);
       setDurationSeconds(
@@ -138,7 +140,6 @@ export default function Quiz() {
       const questionCount = 5;
       const durationSeconds = 300;
       const created = await createQuiz(courseId, { questionCount, durationSeconds });
-      if (userId) clearQuizContributionState(userId, courseId);
       const qs = Array.isArray(created?.questions) ? created.questions : [];
       setQuizId(created?._id ?? null);
       setDurationSeconds(
@@ -151,14 +152,20 @@ export default function Quiz() {
       const status = err?.response?.status;
       const msg = String(err?.response?.data?.message || "");
       const isHumanPoolShortage = msg.includes("HUMAN");
-      if (
-        status === 422 &&
-        userId &&
-        shouldShowNeedMoreFromOthers(userId, courseId) &&
-        isHumanPoolShortage
-      ) {
-        setView("notEnoughFromOthers");
-        return;
+      if (status === 422 && isHumanPoolShortage) {
+        try {
+          const st = await getContributionStatus(courseId);
+          const min = st.minHumanQuestionsForQuiz ?? MIN_HUMAN_QUESTIONS_FOR_QUIZ;
+          const thr = st.userContributionThreshold ?? USER_CONTRIBUTION_THRESHOLD;
+          const human = st.humanQuestionCount ?? 0;
+          const mine = st.myContributionCount ?? 0;
+          if (mine >= thr && human < min) {
+            setView("notEnoughFromOthers");
+            return;
+          }
+        } catch {
+          /* fall through to contribution */
+        }
       }
       if (status === 422) {
         setNeedContribution(true);
@@ -247,6 +254,7 @@ export default function Quiz() {
         <ResultScreen
           score={finalScore}
           total={questions.length}
+          courseName={course?.name}
           onRestart={resetQuiz}
           onBackToCourse={() => navigate(`/courses/${courseId}`)}
         />
@@ -263,7 +271,6 @@ export default function Quiz() {
           }}
           needContribution={needContribution}
           onQuizCreated={(quiz) => {
-            if (userId) clearQuizContributionState(userId, courseId);
             attemptSubmittedRef.current = false;
             const qs = Array.isArray(quiz?.questions) ? quiz.questions : [];
             setQuizId(quiz?._id ?? null);

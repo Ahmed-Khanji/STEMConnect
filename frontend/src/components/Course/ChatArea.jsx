@@ -7,10 +7,9 @@ import { getMessages } from "@/api/messageApi";
 import { markCourseRead } from "@/api/courseApi";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/context/ThemeContext";
-import { useChatSocket } from "@/hooks/useChatSocket";
 import { useCourseRoom } from "@/hooks/useCourseRoom";
 
-export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
+export default function ChatArea({ socket, course, onSelectCourse, onCreateClick }) {
   const { user } = useAuth();
   const myId = user?.userId || user?._id || user?.id;
 
@@ -21,8 +20,7 @@ export default function ChatArea({ course, onSelectCourse, onCreateClick }) {
 
   const courseId = useMemo(() => course?._id || course?.id, [course]);
 
-  // Socket Logic
-  const socket = useChatSocket(localStorage.getItem("accessToken"));
+  // Socket Logic — socket is owned by Course.jsx to enable global unread tracking
   useCourseRoom({ socket, courseId, setMessages });
 
   // Scroll refs

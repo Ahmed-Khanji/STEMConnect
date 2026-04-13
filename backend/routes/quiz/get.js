@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 const { Quiz, QuizAttempt, Question } = require("../../models/quiz");
+const { assertCourseAccess } = require("../../utils/quizUtils");
+
+const MIN_HUMAN_QUESTIONS_FOR_QUIZ = 5;
+const USER_CONTRIBUTION_THRESHOLD = 3;
 
 function registerGetRoutes(router) {
   // Human-written question count for a course (must be before GET /:courseId)
@@ -18,6 +22,42 @@ function registerGetRoutes(router) {
       return res.status(500).json({
         message: `Server error counting human questions: ${err.message}`,
       });
+    }
+  });
+
+  // Authoritative counts for contribution / "need more from others" (authenticated)
+  router.get("/:courseId/contribution-status", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(courseId)) {
+        return res.status(400).json({ message: "Invalid courseId" });
+      }
+      await assertCourseAccess(courseId, req.user.userId);
+
+      const humanQuestionCount = await Question.countDocuments({
+        course: courseId,
+        createdByType: "human",
+      });
+      const myContributionCount = await Question.countDocuments({
+        course: courseId,
+        createdBy: req.user.userId,
+        createdByType: "human",
+      });
+
+      return res.status(200).json({
+        humanQuestionCount,
+        myContributionCount,
+        minHumanQuestionsForQuiz: MIN_HUMAN_QUESTIONS_FOR_QUIZ,
+        userContributionThreshold: USER_CONTRIBUTION_THRESHOLD,
+      });
+    } catch (err) {
+      const status = err.status || 500;
+      if (status >= 500) {
+        console.error("contribution-status:", err?.message || err);
+      }
+      return res
+        .status(status)
+        .json({ message: err.message || "Server error fetching contribution status" });
     }
   });
 

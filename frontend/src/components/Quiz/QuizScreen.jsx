@@ -1,6 +1,40 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X, Sun, Moon, Check, ArrowRight, CheckCircle } from "lucide-react";
 
+// Normalize a short-answer text for comparison (trim + lowercase + collapse spaces)
+function normalizeAnswer(str) {
+  return String(str ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+// True if the question is a short-answer type
+function isShortAnswer(q) {
+  return q?.type === "short_answer";
+}
+
+// Compute correctness for whichever question type
+function computeCorrect(question, selectedOption, shortText) {
+  if (isShortAnswer(question)) {
+    return normalizeAnswer(shortText) === normalizeAnswer(question.correctAnswer);
+  }
+  return selectedOption === question.correctIndex;
+}
+
+// Build the attempt-answer entry for the API
+function buildEntry(question, selectedOption, shortText, isCorrect) {
+  if (isShortAnswer(question)) {
+    return {
+      question: question._id,
+      textAnswer: String(shortText ?? "").trim(),
+      correct: isCorrect,
+    };
+  }
+  return {
+    question: question._id,
+    selectedIndex: selectedOption,
+    correct: isCorrect,
+  };
+}
+
 export default function QuizScreen({
   questions,
   durationSeconds = 300,
@@ -10,7 +44,8 @@ export default function QuizScreen({
   toggleDarkMode,
 }) {
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null); // MCQ: index (0–3)
+  const [shortAnswerText, setShortAnswerText] = useState("");   // short_answer: typed text
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -21,10 +56,12 @@ export default function QuizScreen({
 
   const totalQuestions = questions?.length || 0;
   const currentQuestion = questions?.[currentIdx];
+  const currentIsShortAnswer = isShortAnswer(currentQuestion);
 
   useEffect(() => {
     setCurrentIdx(0);
     setSelectedOption(null);
+    setShortAnswerText("");
     setSubmitted(false);
     setScore(0);
     setAnswers([]);
@@ -53,41 +90,41 @@ export default function QuizScreen({
     [onComplete]
   );
 
-  // Time ran out — if mid-question, auto-submit then finish
+  // Time ran out — auto-submit whatever state we're in
   useEffect(() => {
     if (timeLeft !== 0 || quizDone) return;
 
-    if (!submitted && selectedOption !== null && currentQuestion) {
-      // auto-submit current selection before finishing
-      const isCorrect = selectedOption === currentQuestion.correctIndex;
+    const hasInput = currentIsShortAnswer
+      ? shortAnswerText.trim() !== ""
+      : selectedOption !== null;
+
+    if (!submitted && hasInput && currentQuestion) {
+      const isCorrect = computeCorrect(currentQuestion, selectedOption, shortAnswerText);
       const nextScore = score + (isCorrect ? 1 : 0);
       const nextAnswers = [
         ...answers,
-        { question: currentQuestion._id, selectedIndex: selectedOption, correct: isCorrect },
+        buildEntry(currentQuestion, selectedOption, shortAnswerText, isCorrect),
       ];
       finishWith({ score: nextScore, answers: nextAnswers, timeTakenSeconds: durationSeconds });
     } else {
       finishWith({ score, answers, timeTakenSeconds: durationSeconds });
     }
-  }, [timeLeft, quizDone, submitted, selectedOption, currentQuestion, score, answers, durationSeconds, finishWith]);
+  }, [timeLeft, quizDone, submitted, selectedOption, shortAnswerText, currentQuestion, currentIsShortAnswer, score, answers, durationSeconds, finishWith]);
 
   function handleSubmit() {
-    if (selectedOption === null || !currentQuestion || submitted) return;
+    if (!currentQuestion || submitted) return;
+    if (currentIsShortAnswer && shortAnswerText.trim() === "") return;
+    if (!currentIsShortAnswer && selectedOption === null) return;
 
-    const isCorrect = selectedOption === currentQuestion.correctIndex;
+    const isCorrect = computeCorrect(currentQuestion, selectedOption, shortAnswerText);
     const nextScore = score + (isCorrect ? 1 : 0);
-    const entry = {
-      question: currentQuestion._id,
-      selectedIndex: selectedOption,
-      correct: isCorrect,
-    };
+    const entry = buildEntry(currentQuestion, selectedOption, shortAnswerText, isCorrect);
     const nextAnswers = [...answers, entry];
 
     setScore(nextScore);
     setAnswers(nextAnswers);
     setSubmitted(true);
 
-    // if this was the last question, park the finish payload until user clicks Next
     if (currentIdx === totalQuestions - 1) {
       pendingFinishRef.current = {
         score: nextScore,
@@ -108,6 +145,7 @@ export default function QuizScreen({
 
     setCurrentIdx((i) => i + 1);
     setSelectedOption(null);
+    setShortAnswerText("");
     setSubmitted(false);
   }
 
@@ -117,6 +155,18 @@ export default function QuizScreen({
     const seconds = timeLeft % 60;
     return { progress, minutes, seconds };
   }, [currentIdx, totalQuestions, timeLeft]);
+
+  // Determine the answer the user typed/selected for feedback
+  const submittedAnswerLabel = currentIsShortAnswer
+    ? shortAnswerText.trim()
+    : currentQuestion?.options?.[selectedOption] ?? "";
+
+  const isCorrectAfterSubmit =
+    submitted && computeCorrect(currentQuestion, selectedOption, shortAnswerText);
+
+  const hasInput = currentIsShortAnswer
+    ? shortAnswerText.trim() !== ""
+    : selectedOption !== null;
 
   return (
     <div className="w-full max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col gap-6 mx-auto animate-slide-in h-full">
@@ -134,19 +184,33 @@ export default function QuizScreen({
         progress={view.progress}
       />
 
-      <QuestionCard
-        question={currentQuestion?.question}
-        options={currentQuestion?.options || []}
-        correctIndex={currentQuestion?.correctIndex}
-        explanation={currentQuestion?.explanation}
-        selectedOption={selectedOption}
-        submitted={submitted}
-        onSelectOption={submitted ? undefined : setSelectedOption}
-      />
+      {currentIsShortAnswer ? (
+        <ShortAnswerCard
+          question={currentQuestion?.question}
+          correctAnswer={currentQuestion?.correctAnswer}
+          explanation={currentQuestion?.explanation}
+          value={shortAnswerText}
+          submitted={submitted}
+          isCorrect={isCorrectAfterSubmit}
+          submittedAnswer={submittedAnswerLabel}
+          onChange={submitted ? undefined : setShortAnswerText}
+        />
+      ) : (
+        <McqCard
+          question={currentQuestion?.question}
+          options={currentQuestion?.options || []}
+          correctIndex={currentQuestion?.correctIndex}
+          explanation={currentQuestion?.explanation}
+          selectedOption={selectedOption}
+          submitted={submitted}
+          isCorrect={isCorrectAfterSubmit}
+          onSelectOption={submitted ? undefined : setSelectedOption}
+        />
+      )}
 
       <ActionButton
         submitted={submitted}
-        selectedOption={selectedOption}
+        hasInput={hasInput}
         isLast={currentIdx === totalQuestions - 1}
         onSubmit={handleSubmit}
         onNext={handleNext}
@@ -154,6 +218,8 @@ export default function QuizScreen({
     </div>
   );
 }
+
+/* ── Shared header / progress ─────────────────────────────────── */
 
 function TopHeader({ onExit, isDarkMode, toggleDarkMode, minutes, seconds }) {
   return (
@@ -208,22 +274,21 @@ function ProgressBar({ currentIdx, totalQuestions, progress }) {
   );
 }
 
-function QuestionCard({
+/* ── MCQ card ─────────────────────────────────────────────────── */
+
+function McqCard({
   question,
   options,
   correctIndex,
   explanation,
   selectedOption,
   submitted,
+  isCorrect,
   onSelectOption,
 }) {
-  const isCorrect = submitted && selectedOption === correctIndex;
-
   return (
     <div className="bg-white dark:bg-[#1f2937] rounded-3xl p-8 shadow-soft flex-grow transition-colors flex flex-col gap-6">
-      <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 leading-snug">
-        {question}
-      </h3>
+      <QuestionText text={question} />
 
       <div className="space-y-3">
         {options.map((option, idx) => (
@@ -293,7 +358,66 @@ function OptionButton({ idx, option, selectedOption, correctIndex, submitted, on
   );
 }
 
-function FeedbackBanner({ isCorrect, correctLabel, explanation }) {
+/* ── Short-answer card ────────────────────────────────────────── */
+
+function ShortAnswerCard({
+  question,
+  correctAnswer,
+  explanation,
+  value,
+  submitted,
+  isCorrect,
+  submittedAnswer,
+  onChange,
+}) {
+  return (
+    <div className="bg-white dark:bg-[#1f2937] rounded-3xl p-8 shadow-soft flex-grow transition-colors flex flex-col gap-6">
+      <div className="flex items-center gap-2">
+        <QuestionText text={question} />
+        <span className="shrink-0 text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+          Short answer
+        </span>
+      </div>
+
+      <div>
+        <textarea
+          rows={3}
+          value={value ?? ""}
+          disabled={submitted}
+          onChange={(e) => onChange?.(e.target.value)}
+          placeholder="Type your answer here…"
+          className={`w-full px-4 py-3 rounded-2xl border-2 text-sm font-medium resize-none outline-none transition-colors ${
+            submitted
+              ? isCorrect
+                ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                : "border-red-400 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+              : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 focus:border-purple-500 dark:focus:border-purple-400"
+          }`}
+        />
+      </div>
+
+      {submitted && (
+        <FeedbackBanner
+          isCorrect={isCorrect}
+          correctLabel={correctAnswer}
+          explanation={explanation}
+          submittedAnswer={submittedAnswer}
+          isShortAnswer
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Shared feedback banner ───────────────────────────────────── */
+
+function FeedbackBanner({
+  isCorrect,
+  correctLabel,
+  explanation,
+  submittedAnswer,
+  isShortAnswer: shortAnswerMode,
+}) {
   return (
     <div
       className={`rounded-2xl overflow-hidden animate-fade-in ${
@@ -302,7 +426,6 @@ function FeedbackBanner({ isCorrect, correctLabel, explanation }) {
           : "bg-red-50 dark:bg-red-900/15 border border-red-200 dark:border-red-800/40"
       }`}
     >
-      {/* Result row — only shown when correct */}
       {isCorrect && (
         <div className="flex items-center gap-3 px-5 py-4 font-semibold text-sm text-green-700 dark:text-green-300">
           <CheckCircle size={20} className="shrink-0" />
@@ -310,13 +433,22 @@ function FeedbackBanner({ isCorrect, correctLabel, explanation }) {
         </div>
       )}
 
-      {/* Explanation row */}
+      {/* For wrong short-answer, show both their answer and the expected one */}
+      {!isCorrect && shortAnswerMode && submittedAnswer && (
+        <div className="px-5 pt-4 pb-2 text-sm text-red-600 dark:text-red-400">
+          <span className="font-bold uppercase tracking-widest text-xs mr-2 opacity-60">
+            You wrote:
+          </span>
+          <span className="italic">{submittedAnswer}</span>
+        </div>
+      )}
+
       {explanation && (
         <div
           className={`px-5 pb-4 text-sm ${
             isCorrect
               ? "pt-1 border-t border-green-200 dark:border-green-800/40 text-green-800 dark:text-green-200"
-              : "pt-4 text-red-700 dark:text-red-300"
+              : "pt-3 text-red-700 dark:text-red-300"
           }`}
         >
           <span className="font-bold uppercase tracking-widest text-xs mr-2 opacity-60">
@@ -329,16 +461,25 @@ function FeedbackBanner({ isCorrect, correctLabel, explanation }) {
   );
 }
 
-function ActionButton({ submitted, selectedOption, isLast, onSubmit, onNext }) {
+/* ── Shared helpers ───────────────────────────────────────────── */
+
+function QuestionText({ text }) {
+  return (
+    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 leading-snug flex-1">
+      {text}
+    </h3>
+  );
+}
+
+function ActionButton({ submitted, hasInput, isLast, onSubmit, onNext }) {
   if (!submitted) {
-    const disabled = selectedOption === null;
     return (
       <button
         type="button"
-        disabled={disabled}
+        disabled={!hasInput}
         onClick={onSubmit}
         className={`w-full py-5 px-6 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-3 ${
-          disabled
+          !hasInput
             ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-[#1f2937] dark:text-gray-500"
             : "bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] text-white shadow-lg shadow-purple-500/30 hover:brightness-110 active:scale-[0.98]"
         }`}

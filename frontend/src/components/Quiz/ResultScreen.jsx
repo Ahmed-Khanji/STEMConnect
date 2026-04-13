@@ -1,10 +1,11 @@
 import React from "react";
 import { Trophy, Frown } from "lucide-react";
 
-export default function ResultScreen({ score, total, onRestart, onBackToCourse }) {
-  // Compute result stats
-  const percentage = Math.round((score / total) * 100);
+export default function ResultScreen({ score, total, courseName, onRestart, onBackToCourse }) {
+  const safeTotal = total > 0 ? total : 1;
+  const percentage = Math.round((score / safeTotal) * 100);
   const isPass = percentage >= 60;
+  const displayCourse = courseName?.trim() || "this course";
 
   return (
     <div className="w-full max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col gap-6 mx-auto animate-slide-in text-center">
@@ -13,6 +14,7 @@ export default function ResultScreen({ score, total, onRestart, onBackToCourse }
         total={total}
         percentage={percentage}
         isPass={isPass}
+        displayCourse={displayCourse}
         onRestart={onRestart}
         onBackToCourse={onBackToCourse}
       />
@@ -20,18 +22,26 @@ export default function ResultScreen({ score, total, onRestart, onBackToCourse }
   );
 }
 
-function ResultCard({ score, total, percentage, isPass, onRestart, onBackToCourse }) {
+function ResultCard({
+  score,
+  total,
+  percentage,
+  isPass,
+  displayCourse,
+  onRestart,
+  onBackToCourse,
+}) {
   return (
     <div className="bg-white dark:bg-[#1f2937] rounded-3xl p-10 shadow-soft flex flex-col items-center transition-colors">
       <ResultIcon isPass={isPass} />
 
-      <ResultHeader isPass={isPass} />
+      <ResultHeader isPass={isPass} displayCourse={displayCourse} />
 
       <StatsRow score={score} total={total} percentage={percentage} />
 
       <div className="w-full flex flex-col gap-3">
         <RestartButton onRestart={onRestart} />
-        <BackToCourseButton onClick={onBackToCourse} />
+        {onBackToCourse && <BackToCourseButton onClick={onBackToCourse} />}
       </div>
     </div>
   );
@@ -49,14 +59,15 @@ function ResultIcon({ isPass }) {
   );
 }
 
-function ResultHeader({ isPass }) {
+function ResultHeader({ isPass, displayCourse }) {
   return (
     <>
       <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
         {isPass ? "Excellent Work!" : "Keep Practicing!"}
       </h2>
       <p className="text-gray-600 dark:text-gray-400 mb-8">
-        You've completed the Object-Oriented Programming pop quiz.
+        You&apos;ve completed the pop quiz for{" "}
+        <span className="font-semibold text-gray-800 dark:text-gray-200">{displayCourse}</span>.
       </p>
     </>
   );

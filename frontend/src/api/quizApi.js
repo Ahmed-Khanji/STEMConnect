@@ -58,3 +58,9 @@ export async function getMyAttempts(quizId) {
   const res = await client.get(`/api/quiz/quizzes/${quizId}/my-attempts`);
   return res.data;
 }
+
+// Human pool + current user's human contributions
+export async function getContributionStatus(courseId) {
+  const res = await client.get(`/api/quiz/${courseId}/contribution-status`);
+  return res.data;
+}
