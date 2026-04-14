@@ -4,29 +4,12 @@ const Course = require("../models/Course");
 const User = require("../models/User");
 const CourseReadState = require("../models/CourseReadState");
 const Message = require("../models/Message");
-const { authenticateToken } = require("./authRoutes");
+const { authenticateToken } = require("./auth/authRoutes");
+const { addUserToCourse, removeUserFromCourse } = require("../utils/CourseUtils");
 
 const router = express.Router();
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-
-// Helpers: keep both User and Course synced
-async function addUserToCourse(userId, courseId) {
-  await Promise.all([
-    // add course to user
-    User.updateOne({ _id: userId }, { $addToSet: { courses: courseId } }),
-    // add user to course
-    Course.updateOne({ _id: courseId }, { $addToSet: { users: userId } }),
-  ]);
-}
-
-async function removeUserFromCourse(userId, courseId) {
-  await Promise.all([
-    User.updateOne({ _id: userId }, { $pull: { courses: courseId } }),
-    Course.updateOne({ _id: courseId }, { $pull: { users: userId } }),
-  ]);
-}
-
 
 // POST /api/courses, Body: { name, code, color }, createdBy = logged-in user and auto-enroll creator into the course
 router.post("/", authenticateToken, async (req, res) => {
@@ -286,12 +269,8 @@ router.post("/:id/leave", authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const isEnrolled = course.users.some((u) => String(u) === String(userId));
     if (!isEnrolled) return res.status(400).json({ message: "You are not enrolled in this course" });
-    
-    // remove user from course
-    await Course.updateOne(
-      { _id: courseId },
-      { $pull: { users: userId } }
-    );
+
+    await removeUserFromCourse(userId, courseId);
 
     return res.json({ message: "Left course", courseId });
   } catch (err) {

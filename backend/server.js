@@ -7,8 +7,8 @@ const http = require("http");
 
 const setupSockets = require("./services/chatSocket");
 const userRoutes = require("./routes/userRoutes");
-const { authRoutes, authenticateToken } = require("./routes/authRoutes");
-const authGoogleRoutes = require("./routes/authGoogle");
+const { authRoutes, authenticateToken } = require("./routes/auth/authRoutes");
+const authGoogleRoutes = require("./routes/auth/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const quizRoutes = require("./routes/quiz");

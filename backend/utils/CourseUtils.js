@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Course = require("../models/Course");
+const User = require("../models/User");
 
 const httpErr = (status, msg) => Object.assign(new Error(msg), { status });
 
@@ -10,6 +11,20 @@ async function assertCourseAccess(courseId, userId) {
   if (!course.users?.some((u) => String(u) === String(userId)))
     throw httpErr(403, "Not allowed in this course");
   return course;
+}
+
+async function addUserToCourse(userId, courseId) {
+  await Promise.all([
+    User.updateOne({ _id: userId }, { $addToSet: { courses: courseId } }),
+    Course.updateOne({ _id: courseId }, { $addToSet: { users: userId } }),
+  ]);
+}
+
+async function removeUserFromCourse(userId, courseId) {
+  await Promise.all([
+    User.updateOne({ _id: userId }, { $pull: { courses: courseId } }),
+    Course.updateOne({ _id: courseId }, { $pull: { users: userId } }),
+  ]);
 }
 
 function parseOptionalDate(value) {
@@ -83,6 +98,8 @@ function normalizeText(str) {
 
 module.exports = {
   assertCourseAccess,
+  addUserToCourse,
+  removeUserFromCourse,
   parseOptionalDate,
   parseQuizAttemptBody,
   normalizeText,

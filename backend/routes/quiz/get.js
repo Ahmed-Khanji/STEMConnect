@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { Quiz, QuizAttempt, Question } = require("../../models/quiz");
-const { assertCourseAccess } = require("../../utils/quizUtils");
+const { assertCourseAccess } = require("../../utils/CourseUtils");
 
 const MIN_HUMAN_QUESTIONS_FOR_QUIZ = 5;
 const USER_CONTRIBUTION_THRESHOLD = 3;

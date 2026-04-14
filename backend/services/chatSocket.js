@@ -60,7 +60,7 @@ module.exports = function setupSockets(server) {
             socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
           }
         });
-    
+        
         socket.on("leaveCourse", ({ courseId }) => {
           socket.leave(`course:${courseId}`);
           socket.emit("leftCourse", { courseId });

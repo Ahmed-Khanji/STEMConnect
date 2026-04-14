@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Course = require("../../models/Course");
 const { Quiz, Question, QuizAttempt } = require("../../models/quiz");
 const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/geminiService");
-const { assertCourseAccess, normalizeText, parseQuizAttemptBody } = require("../../utils/quizUtils");
+const { assertCourseAccess, normalizeText, parseQuizAttemptBody } = require("../../utils/CourseUtils");
 
 function registerPostRoutes(router) {
   // Generate AI explanation for a question (must be before /:courseId)
