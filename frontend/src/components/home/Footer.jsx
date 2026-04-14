@@ -13,7 +13,6 @@ export default function Footer() {
       { label: tfoot("explore.projects"), href: "/projects" },
       { label: tfoot("explore.quizzes"), href: "/quizzes" },
       { label: tfoot("explore.exams"), href: "/exams" },
-      { label: tfoot("explore.notes"), href: "/notes" },
       { label: tfoot("explore.tournaments"), href: "/tournaments" },
     ],
   };

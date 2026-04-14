@@ -21,8 +21,7 @@ Future expansions:
 - **Home Page**: Modern and engaging, register/login
 - **Study Rooms**: Real-time video + chat + flashcards.
 - **Pre-Exam Sprints**: Timed sessions with auto flashcard generation.  
-- **Project Management**: Post projects, recruit teammates, Trello-style boards.  
-- **Notes Marketplace**: Upload, sell, or share study notes.
+- **Project Management**: Post projects, recruit teammates, Trello-style boards.
 - **Gamification**: Leaderboards, badges, and structured challenges.  
 - **Mini Tournaments**: Company-sponsored project competitions.  
 

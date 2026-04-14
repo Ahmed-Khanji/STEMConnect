@@ -12,6 +12,7 @@ const authGoogleRoutes = require("./routes/auth/authGoogle");
 const courseRoutes = require("./routes/courseRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const quizRoutes = require("./routes/quiz");
+const projectRoutes = require("./routes/project");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ app.use("/api/users", authenticateToken, userRoutes);
 app.use("/api/courses", authenticateToken, courseRoutes);
 app.use("/api/messages", authenticateToken, messageRoutes);
 app.use("/api/quiz", authenticateToken, quizRoutes);
+app.use("/api/projects", projectRoutes);
 
 // Socket
 const server = http.createServer(app);
