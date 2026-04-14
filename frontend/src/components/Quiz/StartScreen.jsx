@@ -47,15 +47,10 @@ export default function StartScreen({
         toggleDarkMode={toggleDarkMode}
         onBack={() => navigate(-1)}
       />
-
       <MainBanner title={title} subtitle={`${semester} • ${code}`} />
-
       <StatsCards durationMinutes={durationMinutes} questionCount={questionCount} />
-
       <CompletionBanner classAverage={classAverage} />
-
       <Instructions courseName={title} />
-
       <FooterCTA onStart={onStart} />
     </div>
   );
