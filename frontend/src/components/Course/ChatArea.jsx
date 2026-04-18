@@ -132,7 +132,7 @@ export default function ChatArea({ socket, course, onSelectCourse, onCreateClick
     if (!text || !courseId || sending || !socket) return;
   
     setSending(true);
-    socket.emit("sendMessage", { courseId, type: "text", content: text });
+    socket.emit("sendCourseMessage", { courseId, type: "text", content: text });
     setInputValue("");
     setSending(false);
   }

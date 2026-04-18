@@ -11,7 +11,7 @@ const router = express.Router();
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// POST /api/courses, Body: { name, code, color }, createdBy = logged-in user and auto-enroll creator into the course
+// Body: { name, code, color }, createdBy = logged-in user and auto-enroll creator into the course
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const { name, code, color } = req.body;
@@ -39,7 +39,7 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 
-// GET /api/courses, Returns ALL courses (Optional: ?q=CS searches by name/code)
+// Returns ALL courses (Optional: ?q=CS searches by name/code)
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -59,7 +59,7 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/courses/mycourses, Returns ONLY courses the logged-in user is enrolled in (Optional: ?q=CS searches by name/code)
+// Returns ONLY courses the logged-in user is enrolled in (Optional: ?q=CS searches by name/code)
 router.get("/mycourses", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -80,7 +80,7 @@ router.get("/mycourses", authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/courses/:id/read  (mark as read when user opens/selects a course)
+// mark as read when user opens/selects a course
 router.post("/:id/read", authenticateToken, async (req, res) => {
   try {
     const { id: courseId } = req.params;
@@ -104,7 +104,7 @@ router.post("/:id/read", authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/courses/unread-counts  (sidebar badges)
+// GET unread counts for courses the user is enrolled in (sidebar badges)
 router.get("/unread-counts", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;

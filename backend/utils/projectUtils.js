@@ -16,6 +16,32 @@ async function assertProjectMember(projectId, userId) {
   return project;
 }
 
+async function assertProjectOwner(projectId, userId) {
+  if (!mongoose.Types.ObjectId.isValid(projectId)) throw httpErr(400, "Invalid project id");
+  const project = await Project.findById(projectId).select("ownerId");
+  if (!project) throw httpErr(404, "Project not found");
+  if (String(project.ownerId) !== String(userId)) throw httpErr(403, "Owner only");
+  return project;
+}
+
+function userIsOnProject(project, userId) {
+  if (String(project.ownerId) === String(userId)) return true;
+  return project.members?.some((m) => String(m.userId) === uid) ?? false;
+}
+
+async function verifyGithubRepoAccess(repoFullName, accessToken) {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/vnd.github+json",
+    "User-Agent": "STEMConnect",
+  };
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}`, { headers });
+  if (!res.ok) {
+    const t = await res.text();
+    throw httpErr(400, t || `GitHub rejected repo (${res.status})`);
+  }
+}
+
 function buildProjectListFilter(query) {
   const filter = {};
   const q = (query.q || "").trim();
@@ -85,7 +111,10 @@ async function fetchGithubRepoSummary(repoFullName, accessToken) {
 
 module.exports = {
   assertProjectMember,
+  assertProjectOwner,
   buildProjectListFilter,
   fetchGithubRepoSummary,
   httpErr,
+  userIsOnProject,
+  verifyGithubRepoAccess,
 };

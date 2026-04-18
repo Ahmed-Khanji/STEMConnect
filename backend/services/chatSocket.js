@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
 const Course = require("../models/Course");
+const { assertProjectMember } = require("../utils/projectUtils");
 const jwt = require("jsonwebtoken");
 
 async function assertCourseAccess(courseId, userId) {
@@ -66,7 +67,7 @@ module.exports = function setupSockets(server) {
           socket.emit("leftCourse", { courseId });
         });
     
-        socket.on("sendMessage", async ({ courseId, type = "text", content = "", attachments = [] }) => {
+        socket.on("sendCourseMessage", async ({ courseId, type = "text", content = "", attachments = [] }) => {
           try {
             await assertCourseAccess(courseId, socket.user.id);
             
@@ -79,12 +80,51 @@ module.exports = function setupSockets(server) {
               sender: socket.user.id,
               type,
               content: String(content),
-              attachments: Array.isArray(attachments) ? attachments : [],
+              attachments: attachments,
             });
         
             const populated = await Message.findById(created._id).populate("sender", "name email");
         
             io.to(`course:${courseId}`).emit("newMessage", populated);
+          } catch (err) {
+            socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
+          }
+        });
+
+        socket.on("joinProject", async ({ projectId }) => {
+          try {
+            await assertProjectMember(projectId, socket.user.id);
+            socket.join(`project:${projectId}`);
+            socket.emit("joinedProject", { projectId });
+          } catch (err) {
+            socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
+          }
+        });
+
+        socket.on("leaveProject", ({ projectId }) => {
+          socket.leave(`project:${projectId}`);
+          socket.emit("leftProject", { projectId });
+        });
+
+        socket.on("sendProjectMessage", async ({ projectId, type = "text", content = "", attachments = [] }) => {
+          try {
+            await assertProjectMember(projectId, socket.user.id);
+            if (type === "text" && !String(content).trim()) {
+              return socket.emit("errorMessage", { error: "Message content required", status: 400 });
+            }
+
+            // create message inside Message model 
+            const created = await Message.create({
+              project: projectId,
+              sender: socket.user.id,
+              type,
+              content: String(content),
+              attachments: Array.isArray(attachments) ? attachments : [],
+            });
+            const populated = await Message.findById(created._id).populate("sender", "name email");
+
+            // broadcast to project socket room
+            io.to(`project:${projectId}`).emit("newMessage", populated);
           } catch (err) {
             socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
           }
