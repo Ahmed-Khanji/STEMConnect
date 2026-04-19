@@ -4,6 +4,7 @@ const joinRequestSchema = new mongoose.Schema(
   {
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project", required: true, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    appliedRole: { type: String, required: true, trim: true },
     message: { type: String, trim: true, default: "", maxlength: 2000 },
     status: {
       type: String,

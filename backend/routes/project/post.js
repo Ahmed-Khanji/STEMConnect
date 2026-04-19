@@ -7,13 +7,13 @@ const { authenticateToken } = require("../auth/authRoutes");
 const {
   assertProjectMember,
   assertProjectOwner,
+  COMMITMENTS,
+  JOINABLE_PROJECT_STATUSES,
+  KANBAN_TASK_STATUSES,
+  PROJECT_STATUSES,
   userIsOnProject,
   verifyGithubRepoAccess,
 } = require("../../utils/projectUtils");
-
-const COMMITMENTS = new Set(["hackathon", "side_project", "startup"]);
-const STATUSES = new Set(["recruiting", "in_progress", "completed", "archived"]);
-const JOINABLE = new Set(["recruiting", "in_progress"]);
 
 function registerPostRoutes(router) {
   // create project (auth)
@@ -26,7 +26,7 @@ function registerPostRoutes(router) {
 
       if (rolesNeeded.length > 4) return res.status(400).json({ message: "At most 4 roles needed" });
       const commit = commitment && COMMITMENTS.has(String(commitment)) ? commitment : "side_project";
-      const st = status && STATUSES.has(String(status)) ? status : "recruiting";
+      const st = status && PROJECT_STATUSES.has(String(status)) ? status : "recruiting";
       
       const project = await Project.create({
         title: String(title).trim(),
@@ -54,9 +54,9 @@ function registerPostRoutes(router) {
         return res.status(400).json({ message: "Invalid project id" });
       }
       // check if project exists and is accepting join requests
-      const project = await Project.findById(id).select("ownerId members status");
+      const project = await Project.findById(id).select("ownerId members status rolesNeeded");
       if (!project) return res.status(404).json({ message: "Project not found" });
-      if (!JOINABLE.has(project.status)) {
+      if (!JOINABLE_PROJECT_STATUSES.has(project.status)) {
         return res.status(400).json({ message: "Project is not accepting join requests" });
       }
       // check if user is the owner/member of the project
@@ -68,7 +68,15 @@ function registerPostRoutes(router) {
         return res.status(400).json({ message: "Already a member" });
       }
       const message = req.body?.message != null ? String(req.body.message).trim() : "";
-      
+      const appliedRole =
+        req.body?.appliedRole != null ? String(req.body.appliedRole).trim() : "";
+      if (!appliedRole) {
+        return res.status(400).json({ message: "appliedRole is required" });
+      }
+      if (project.rolesNeeded.length > 0 && !project.rolesNeeded.includes(appliedRole)) {
+        return res.status(400).json({ message: "appliedRole must be one of this project's rolesNeeded" });
+      }
+
       // check if join request already exists
       const existing = await JoinRequest.findOne({ projectId: id, userId: userId, status: "pending" });
       if (existing) return res.status(409).json({ message: "Join request already pending" });
@@ -76,6 +84,7 @@ function registerPostRoutes(router) {
       const joinRequest = await JoinRequest.create({
         projectId: id,
         userId: userId,
+        appliedRole,
         message,
         status: "pending",
       });
@@ -98,7 +107,7 @@ function registerPostRoutes(router) {
         return res.status(400).json({ message: "Title is required" });
       }
       if (assigneeId) await assertProjectMember(id, assigneeId);
-      const taskStatus = status && ["todo", "in_progress", "done"].includes(String(status)) ? status : "todo";
+      const taskStatus = status && KANBAN_TASK_STATUSES.has(String(status)) ? status : "todo";
       let due = null;
       if (dueDate != null && String(dueDate).trim()) {
         const d = new Date(dueDate);

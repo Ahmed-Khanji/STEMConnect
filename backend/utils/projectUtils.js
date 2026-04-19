@@ -3,6 +3,11 @@ const Project = require("../models/project/Project");
 
 const httpErr = (status, msg) => Object.assign(new Error(msg), { status });
 
+const COMMITMENTS = new Set(["hackathon", "side_project", "startup"]);
+const PROJECT_STATUSES = new Set(["recruiting", "in_progress", "completed", "archived"]);
+const JOINABLE_PROJECT_STATUSES = new Set(["recruiting", "in_progress"]);
+const KANBAN_TASK_STATUSES = new Set(["todo", "in_progress", "done"]);
+
 async function assertProjectMember(projectId, userId) {
   if (!mongoose.Types.ObjectId.isValid(projectId)) throw httpErr(400, "Invalid project id");
   // check if project exists
@@ -51,7 +56,7 @@ function buildProjectListFilter(query) {
       { description: { $regex: q, $options: "i" } },
     ];
   }
-  if (query.status) filter.status = String(query.status);
+  if (query.status && PROJECT_STATUSES.has(String(query.status))) filter.status = String(query.status);
   if (query.role) filter.rolesNeeded = String(query.role);
   if (query.tech) filter.techstack = String(query.tech);
   return filter;
@@ -113,8 +118,12 @@ module.exports = {
   assertProjectMember,
   assertProjectOwner,
   buildProjectListFilter,
+  COMMITMENTS,
   fetchGithubRepoSummary,
   httpErr,
+  JOINABLE_PROJECT_STATUSES,
+  KANBAN_TASK_STATUSES,
+  PROJECT_STATUSES,
   userIsOnProject,
   verifyGithubRepoAccess,
 };
