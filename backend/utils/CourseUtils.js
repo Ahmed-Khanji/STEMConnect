@@ -8,6 +8,7 @@ async function assertCourseAccess(courseId, userId) {
   if (!mongoose.Types.ObjectId.isValid(courseId)) throw httpErr(400, "Invalid courseId");
   const course = await Course.findById(courseId).select("users");
   if (!course) throw httpErr(404, "Course not found");
+  // check if user is enrolled in the course
   if (!course.users?.some((u) => String(u) === String(userId)))
     throw httpErr(403, "Not allowed in this course");
   return course;

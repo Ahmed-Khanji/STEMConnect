@@ -1,33 +1,8 @@
 const { Server } = require("socket.io");
-const mongoose = require("mongoose");
 const Message = require("../models/Message");
-const Course = require("../models/Course");
+const { assertCourseAccess } = require("../utils/CourseUtils");
 const { assertProjectMember } = require("../utils/projectUtils");
 const jwt = require("jsonwebtoken");
-
-async function assertCourseAccess(courseId, userId) {
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      const err = new Error("Invalid courseId");
-      err.status = 400;
-      throw err;
-    }
-  
-    const course = await Course.findById(courseId).select("users");
-    if (!course) {
-      const err = new Error("Course not found");
-      err.status = 404;
-      throw err;
-    }
-  
-    const isEnrolled = course.users.some((u) => String(u) === String(userId));
-    if (!isEnrolled) { 
-      const err = new Error("Not allowed in this course");
-      err.status = 403;
-      throw err;
-    }
-  
-    return course;
-}
 
 module.exports = function setupSockets(server) {
     const io = new Server(server, {
@@ -62,11 +37,13 @@ module.exports = function setupSockets(server) {
           }
         });
         
+        // leave a course room
         socket.on("leaveCourse", ({ courseId }) => {
           socket.leave(`course:${courseId}`);
           socket.emit("leftCourse", { courseId });
         });
     
+        // send a message to a course room
         socket.on("sendCourseMessage", async ({ courseId, type = "text", content = "", attachments = [] }) => {
           try {
             await assertCourseAccess(courseId, socket.user.id);
@@ -91,6 +68,7 @@ module.exports = function setupSockets(server) {
           }
         });
 
+        // join a project workspace room
         socket.on("joinProject", async ({ projectId }) => {
           try {
             await assertProjectMember(projectId, socket.user.id);
@@ -101,11 +79,13 @@ module.exports = function setupSockets(server) {
           }
         });
 
+        // leave a project workspace room
         socket.on("leaveProject", ({ projectId }) => {
           socket.leave(`project:${projectId}`);
           socket.emit("leftProject", { projectId });
         });
 
+        // send a message to a project workspace room
         socket.on("sendProjectMessage", async ({ projectId, type = "text", content = "", attachments = [] }) => {
           try {
             await assertProjectMember(projectId, socket.user.id);
@@ -119,7 +99,7 @@ module.exports = function setupSockets(server) {
               sender: socket.user.id,
               type,
               content: String(content),
-              attachments: Array.isArray(attachments) ? attachments : [],
+              attachments: attachments,
             });
             const populated = await Message.findById(created._id).populate("sender", "name email");
 
