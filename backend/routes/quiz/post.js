@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Course = require("../../models/Course");
 const { Quiz, Question, QuizAttempt } = require("../../models/quiz");
-const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/geminiService");
+const { generateQuizQuestions, generateQuestionExplanation } = require("../../services/gemini");
 const { assertCourseAccess, normalizeText, parseQuizAttemptBody } = require("../../utils/CourseUtils");
 
 function registerPostRoutes(router) {
