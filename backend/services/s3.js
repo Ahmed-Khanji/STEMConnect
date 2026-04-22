@@ -1,4 +1,5 @@
 const { S3Client, HeadObjectCommand, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -36,4 +37,25 @@ const deleteFile = async (key) => {
   }));
 };
 
-module.exports = { getFile, uploadFile, deleteFile };
+// Public object URL (same shape as uploadFile return value)
+function publicUrlForKey(key) {
+  const bucket = process.env.AWS_BUCKET_NAME;
+  const region = process.env.AWS_REGION;
+  const encodedKey = String(key)
+    .split("/")
+    .map((seg) => encodeURIComponent(seg))
+    .join("/");
+  return `https://${bucket}.s3.${region}.amazonaws.com/${encodedKey}`;
+}
+
+// Client PUTs the file body to this URL (Content-Type must match what was signed)
+async function getPresignedPutUrl(key, contentType, expiresInSeconds = 900) {
+  const cmd = new PutObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+  });
+  return getSignedUrl(s3, cmd, { expiresIn: expiresInSeconds });
+}
+
+module.exports = { getFile, uploadFile, deleteFile, publicUrlForKey, getPresignedPutUrl };
