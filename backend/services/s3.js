@@ -1,4 +1,10 @@
-const { S3Client, HeadObjectCommand, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3 = new S3Client({
@@ -9,47 +15,8 @@ const s3 = new S3Client({
   },
 });
 
-const getFile = async (key) => {
-  const head = await s3.send(new HeadObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: key,
-  }));
-  return {
-    url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`,
-    mimeType: head.ContentType,
-  };
-};
-
-const uploadFile = async (key, body, contentType) => {
-  await s3.send(new PutObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: key,
-    Body: body,
-    ContentType: contentType,
-  }));
-  return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-};
-
-const deleteFile = async (key) => {
-  await s3.send(new DeleteObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: key,
-  }));
-};
-
-// Public object URL (same shape as uploadFile return value)
-function publicUrlForKey(key) {
-  const bucket = process.env.AWS_BUCKET_NAME;
-  const region = process.env.AWS_REGION;
-  const encodedKey = String(key)
-    .split("/")
-    .map((seg) => encodeURIComponent(seg))
-    .join("/");
-  return `https://${bucket}.s3.${region}.amazonaws.com/${encodedKey}`;
-}
-
 // Client PUTs the file body to this URL (Content-Type must match what was signed)
-async function getPresignedPutUrl(key, contentType, expiresInSeconds = 900) {
+async function presignedPutUrl(key, contentType, expiresInSeconds = 900) {
   const cmd = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: key,
@@ -58,4 +25,54 @@ async function getPresignedPutUrl(key, contentType, expiresInSeconds = 900) {
   return getSignedUrl(s3, cmd, { expiresIn: expiresInSeconds });
 }
 
-module.exports = { getFile, uploadFile, deleteFile, publicUrlForKey, getPresignedPutUrl };
+// Client downloads directly using temporary signed GET URL.
+async function presignedGetUrl(key, expiresInSeconds = 900) {
+  const cmd = new GetObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: key,
+  });
+  return getSignedUrl(s3, cmd, { expiresIn: expiresInSeconds });
+}
+
+// Client can call DELETE directly using temporary signed URL.
+async function presignedDeleteUrl(key, expiresInSeconds = 900) {
+  const cmd = new DeleteObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: key,
+  });
+  return getSignedUrl(s3, cmd, { expiresIn: expiresInSeconds });
+}
+
+// List all objects in the bucket (handles pagination).
+async function listAllBucketFiles(prefix = "") {
+  const files = [];
+  let continuationToken;
+
+  do {
+    // List objects in the bucket (prefix used to filter the files according to their key)
+    const page = await s3.send(new ListObjectsV2Command({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Prefix: prefix, // prefix e.g. courses/<courseId>/ or projects/<projectId>/
+      ContinuationToken: continuationToken,
+    }));
+
+    // Push the files to the files array
+    for (const item of page.Contents || []) {
+      files.push({
+        key: item.Key,
+        size: item.Size,
+      });
+    }
+
+    continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return files;
+}
+
+module.exports = {
+  presignedPutUrl,
+  presignedGetUrl,
+  presignedDeleteUrl,
+  listAllBucketFiles,
+};
