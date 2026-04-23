@@ -35,25 +35,30 @@ router.post("/attachments/presign-upload", async (req, res) => {
   }
 });
 
-// presigned download URL for attachments
+// presigned download URL for attachments, body: { messageId, attachmentIndex }
 router.post("/attachments/presign-download", async (req, res) => {
   try {
     const userId = req.user.userId;
     const body = req.body || {};
+
+    // validate messageId and attachmentIndex
     if (!mongoose.Types.ObjectId.isValid(body.messageId)) return res.status(400).json({ message: "Invalid messageId" });
     const attachmentIndex = parseInt(body.attachmentIndex, 10);
     if (!Number.isInteger(attachmentIndex) || attachmentIndex < 0) {
       return res.status(400).json({ message: "Invalid attachmentIndex" });
     }
 
-    const message = await Message.findById(body.messageId).select("course project attachments");
+    // load message and specific attachment
+    const message = await Message.findById(body.messageId).select("courseId projectId attachments");
     if (!message) return res.status(404).json({ message: "Not found" });
     const attachment = message.attachments?.[attachmentIndex];
     if (!attachment?.url) return res.status(404).json({ message: "Not found" });
 
-    if (message.course) await assertCourseAccess(message.course, userId);
-    else await assertProjectMember(message.project, userId);
+    // validate access to course or project
+    if (message.courseId) await assertCourseAccess(message.courseId, userId);
+    else await assertProjectMember(message.projectId, userId);
 
+    // generate presigned download URL
     const getUrl = await s3.presignedGetUrl(attachment.url, PRESIGN_URL_EXPIRES_SECONDS);
     res.json({ getUrl, expiresIn: PRESIGN_URL_EXPIRES_SECONDS });
   } catch (err) {
@@ -61,18 +66,21 @@ router.post("/attachments/presign-download", async (req, res) => {
   }
 });
 
-// presigned delete URL for attachments
+// presigned delete URL for attachments, body: { key }
 router.post("/attachments/presign-delete", async (req, res) => {
   try {
     const userId = req.user.userId;
     const body = req.body || {};
     const attachmentScope = await scopeForUser(userId, body.courseId, body.projectId);
+
+    // validate key and scope
     const s3ObjectKey = String(body.key || "").trim();
     if (!s3ObjectKey) return res.status(400).json({ message: "Missing key" });
     if (!s3ObjectKey.startsWith(attachmentScope.prefix)) {
       return res.status(403).json({ message: "Key out of scope" });
     }
 
+    // generate presigned delete URL
     const deleteUrl = await s3.presignedDeleteUrl(s3ObjectKey, PRESIGN_URL_EXPIRES_SECONDS);
     res.json({ deleteUrl, expiresIn: PRESIGN_URL_EXPIRES_SECONDS });
   } catch (err) {
@@ -92,16 +100,29 @@ router.get("/attachments/list", async (req, res) => {
   }
 });
 
-// load latest messages in a course
-router.get("/:courseId", async (req, res) => {
+// load latest messages for either a course or a project
+// route: /:type/:id where type is "course" or "project", plus ?limit=40&before=<ISO>
+router.get("/:type/:id", async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const { type, id } = req.params;
     const userId = req.user.userId;
-    await assertCourseAccess(courseId, userId);
     const limit = Math.min(parseInt(req.query.limit || "40", 10), 100);
     const before = req.query.before ? new Date(req.query.before) : null;
-    const filter = { course: courseId };
+    const filter = {};
     if (before && !Number.isNaN(before.getTime())) filter.createdAt = { $lt: before };
+
+    // validate type and filter messages
+    if (type === "course") {
+      await assertCourseAccess(id, userId);
+      filter.courseId = id;
+    } else if (type === "project") {
+      await assertProjectMember(id, userId);
+      filter.projectId = id;
+    } else {
+      return res.status(400).json({ message: "Invalid type. Use 'course' or 'project'" });
+    }
+
+    // get messages from the course or project
     const messages = await Message.find(filter)
       .sort({ createdAt: -1 })
       .limit(limit)

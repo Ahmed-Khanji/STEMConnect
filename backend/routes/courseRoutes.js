@@ -127,7 +127,7 @@ router.get("/unread-counts", authenticateToken, async (req, res) => {
       courseIds.map(async (courseId) => {
         const lastReadAt = lastReadByCourse.get(String(courseId)) || new Date(0);
         const count = await Message.countDocuments({
-          course: courseId,
+          courseId,
           createdAt: { $gt: lastReadAt },
         });
         return [String(courseId), count];

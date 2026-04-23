@@ -71,7 +71,7 @@ function registerGetRoutes(router) {
 
             const limit = Math.min(parseInt(req.query.limit || "40", 10), 100);
             const before = req.query.before ? new Date(req.query.before) : null;
-            const filter = { project: id };
+            const filter = { projectId: id };
             if (before && !Number.isNaN(before.getTime())) filter.createdAt = { $lt: before };
 
             const messages = await Message.find(filter)

@@ -57,7 +57,7 @@ module.exports = function setupSockets(server) {
 
             // creating message
             const created = await Message.create({
-              course: courseId,
+              courseId,
               sender: socket.user.id,
               type: v.msgType,
               content: String(content),
@@ -101,7 +101,7 @@ module.exports = function setupSockets(server) {
 
             // creating message
             const created = await Message.create({
-              project: projectId,
+              projectId,
               sender: socket.user.id,
               type: v.msgType,
               content: String(content),

@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema(
   {
-    course: {
+    courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
       required: false,
       index: true,
     },
-    project: {
+    projectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
       required: false,
@@ -47,14 +47,14 @@ const messageSchema = new mongoose.Schema(
 );
 
 messageSchema.pre("validate", function (next) {
-  if (!this.course && !this.project) {
+  if (!this.courseId && !this.projectId) {
     return next(new Error("Message must belong to a course or a project"));
   }
   next();
 });
 
 // compound index for fast "load latest messages in a course or project"
-messageSchema.index({ course: 1, createdAt: -1 });
-messageSchema.index({ project: 1, createdAt: -1 });
+messageSchema.index({ courseId: 1, createdAt: -1 });
+messageSchema.index({ projectId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Message", messageSchema);
