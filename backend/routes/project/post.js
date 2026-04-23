@@ -1,8 +1,11 @@
+const crypto = require("crypto");
 const mongoose = require("mongoose");
 const Project = require("../../models/project/Project");
 const JoinRequest = require("../../models/project/JoinRequest");
 const KanbanTask = require("../../models/project/KanbanTask");
 const GithubIntegration = require("../../models/project/GithubIntegration");
+const s3 = require("../../services/s3");
+const { sanitizeFilename } = require("../../utils/MessageUtils");
 const { authenticateToken } = require("../auth/authRoutes");
 const {
   assertProjectMember,
@@ -12,14 +15,36 @@ const {
   KANBAN_TASK_STATUSES,
   PROJECT_STATUSES,
   userIsOnProject,
+  validateImageUrlForStorage,
   verifyGithubRepoAccess,
+  withResolvedImageOnProject,
 } = require("../../utils/projectUtils");
 
+const PRESIGN_COVER_EXPIRES_SECONDS = 900;
+
 function registerPostRoutes(router) {
+  // presigned PUT for project cover (client uploads to S3, then sends key or URL on POST /projects)
+  router.post("/cover/presign", authenticateToken, async (req, res) => {
+    try {
+      // validate contentType and fileName
+      const { contentType, fileName } = req.body || {};
+      if (!String(contentType || "").startsWith("image/")) return res.status(400).json({ message: "contentType must be image/*" });
+      const safeName = sanitizeFilename(fileName);
+      if (!safeName) return res.status(400).json({ message: "Invalid fileName" });
+
+      // build S3 key and return presigned PUT URL
+      const key = `projects/covers/${req.user.userId}/${crypto.randomUUID()}-${safeName}`;
+      const putUrl = await s3.presignedPutUrl(key, contentType, PRESIGN_COVER_EXPIRES_SECONDS);
+      return res.json({ putUrl, key, expiresIn: PRESIGN_COVER_EXPIRES_SECONDS });
+    } catch (err) {
+      return res.status(err.status || 500).json({ message: err.message || "presign cover failed" });
+    }
+  });
+
   // create project (auth)
   router.post("/", authenticateToken, async (req, res) => {
     try {
-      const { title, description, techstack, rolesNeeded, commitment, status } = req.body;
+      const { title, description, techstack, rolesNeeded, commitment, status, imageUrl } = req.body;
       if (!title || !String(title).trim()) {
         return res.status(400).json({ message: "Title is required" });
       }
@@ -27,7 +52,14 @@ function registerPostRoutes(router) {
       if (rolesNeeded.length > 4) return res.status(400).json({ message: "At most 4 roles needed" });
       const commit = commitment && COMMITMENTS.has(String(commitment)) ? commitment : "side_project";
       const st = status && PROJECT_STATUSES.has(String(status)) ? status : "recruiting";
-      
+
+      let storedImageUrl = "";
+      try {
+        storedImageUrl = validateImageUrlForStorage(imageUrl);
+      } catch (e) {
+        return res.status(e.status || 400).json({ message: e.message });
+      }
+
       const project = await Project.create({
         title: String(title).trim(),
         description: description != null ? String(description).trim() : "",
@@ -35,12 +67,14 @@ function registerPostRoutes(router) {
         rolesNeeded: rolesNeeded,
         commitment: commit,
         status: st,
+        imageUrl: storedImageUrl,
         ownerId: req.user.userId,
         members: [{ userId: req.user.userId, role: "owner", joinedAt: new Date() }],
       });
-      const populated = await Project.findById(project._id).populate("ownerId", "name email");
-      
-      return res.status(201).json({ project: populated });
+      const populated = await Project.findById(project._id).populate("ownerId", "name email").lean();
+      const out = await withResolvedImageOnProject(populated);
+
+      return res.status(201).json({ project: out });
     } catch (err) {
       return res.status(err.status || 500).json({ message: err.message || "Failed to create project" });
     }

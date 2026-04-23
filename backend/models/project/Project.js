@@ -13,6 +13,7 @@ const projectSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "", trim: true },
+    category: { type: String, default: "", trim: true, index: true },
     techstack: [{ type: String, trim: true }],
     rolesNeeded: [{ type: String, trim: true }],
     commitment: {
@@ -28,6 +29,11 @@ const projectSchema = new mongoose.Schema(
     },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     members: [memberSchema],
+    engagement: {
+      likes: { type: Number, default: 0, min: 0 },
+      views: { type: Number, default: 0, min: 0 },
+    },
+    imageUrl: { type: String, default: "", trim: true, maxlength: 2048 },
   },
   { timestamps: true }
 );

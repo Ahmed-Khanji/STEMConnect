@@ -7,6 +7,7 @@ import Course from './pages/Course.jsx';
 import Quiz from "./pages/Quiz.jsx";
 import Test from './pages/Test.jsx';
 import ComingSoon from "./pages/ComingSoon.jsx";
+import Projects from "./pages/Projects.jsx";
 
 function App() {
 
@@ -19,7 +20,7 @@ function App() {
         <Route path="/courses/:courseId" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-        {/* <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} /> */}
+        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
         <Route path="/tournaments" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
         <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
       </Routes>

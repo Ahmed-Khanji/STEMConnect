@@ -5,65 +5,49 @@ const GithubIntegration = require("../../models/project/GithubIntegration");
 const Message = require("../../models/Message");
 const { authenticateToken } = require("../auth/authRoutes");
 const {
-  assertProjectMember,
-  buildProjectListFilter,
-  fetchGithubRepoSummary,
+    assertProjectMember,
+    buildProjectListFilter,
+    fetchGithubRepoSummary,
+    withResolvedImageOnProject,
+    withResolvedImageOnProjects,
 } = require("../../utils/projectUtils");
 
 function registerGetRoutes(router) {
-    // list all projects 
-    router.get("/", async (req, res) => {
-        try {
-            // query by Project title, description, status, rolesNeeded, techstack
-            const filter = buildProjectListFilter(req.query);
-            
-            const projects = await Project.find(filter)
-            .sort({ createdAt: -1 })
-            .populate("ownerId", "name email")
-            .lean();
-
-            res.json({ projects });
-        } catch (err) {
-            res.status(500).json({ message: err.message || "Failed to list projects" });
-        }
-    });
-
-    // load workspace
+    // load workspace (members only)
     router.get("/:id/workspace", authenticateToken, async (req, res) => {
         try {
             const { id } = req.params;
             await assertProjectMember(id, req.user.userId);
 
             const project = await Project.findById(id)
-            .populate("ownerId members.userId", "name email");
+            .populate("ownerId members.userId", "name email")
+            .lean();
             if (!project) return res.status(404).json({ message: "Project not found" });
 
-            res.json({ project });
+            const out = await withResolvedImageOnProject(project);
+            res.json({ project: out });
         } catch (err) {
             res.status(err.status || 500).json({ message: err.message || "Failed to load workspace" });
         }
     });
 
-    // load GitHub repository summary
+    // load GitHub repository summary (members only)
     router.get("/:id/github", authenticateToken, async (req, res) => {
         try {
             const { id } = req.params;
             await assertProjectMember(id, req.user.userId);
-            
+
             const integration = await GithubIntegration.findOne({ projectId: id }).select("+accessToken").lean();
             if (!integration) return res.json({ linked: false });
 
             const summary = await fetchGithubRepoSummary(integration.repoFullName, integration.accessToken);
-            res.json({
-                linked: true,
-                ...summary,
-            });
+            res.json({ linked: true, ...summary });
         } catch (err) {
             res.status(502).json({ message: err.message || "GitHub request failed" });
         }
     });
 
-    // load messages for the chat (you can filter by "limit" and "before" date)
+    // load messages for the chat (filter by limit and before date)
     router.get("/:id/messages", authenticateToken, async (req, res) => {
         try {
             const { id } = req.params;
@@ -85,34 +69,53 @@ function registerGetRoutes(router) {
         }
     });
 
-    // load kanban tasks
+    // load kanban tasks (members only)
     router.get("/:id/tasks", authenticateToken, async (req, res) => {
         try {
             const { id } = req.params;
             await assertProjectMember(id, req.user.userId);
-            
+
             const tasks = await KanbanTask.find({ projectId: id })
             .sort({ createdAt: 1 })
             .populate("assigneeId", "name email");
-            
+
             res.json({ tasks });
         } catch (err) {
             res.status(err.status || 500).json({ message: err.message || "Failed to load tasks" });
         }
     });
 
-    // load project details
+    // load project details — catch-all :id, must stay before GET /
     router.get("/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ message: "Invalid project id" });
-            }
+            if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid project id" });
+
             const project = await Project.findById(id).populate("ownerId", "name email").lean();
             if (!project) return res.status(404).json({ message: "Project not found" });
-            res.json({ project });
+
+            const out = await withResolvedImageOnProject(project);
+            res.json({ project: out });
         } catch (err) {
             res.status(500).json({ message: err.message || "Failed to load project" });
+        }
+    });
+
+    // list all projects with optional filters — kept last (broad route)
+    router.get("/", async (req, res) => {
+        try {
+            // query by title, description, status, rolesNeeded, techstack
+            const filter = buildProjectListFilter(req.query);
+
+            const projects = await Project.find(filter)
+            .sort({ createdAt: -1 })
+            .populate("ownerId", "name email")
+            .lean();
+
+            const resolved = await withResolvedImageOnProjects(projects);
+            res.json({ projects: resolved });
+        } catch (err) {
+            res.status(500).json({ message: err.message || "Failed to list projects" });
         }
     });
 }

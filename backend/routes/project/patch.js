@@ -8,6 +8,7 @@ const {
   assertProjectOwner,
   KANBAN_TASK_STATUSES,
   userIsOnProject,
+  withResolvedImageOnProject,
 } = require("../../utils/projectUtils");
 
 function registerPatchRoutes(router) {
@@ -92,9 +93,12 @@ function registerPatchRoutes(router) {
       await project.save();
       const populated = await Project.findById(id)
       .populate("ownerId", "name email")
-      .populate("members.userId", "name email");
+      .populate("members.userId", "name email")
+      .lean();
+      if (!populated) return res.status(404).json({ message: "Project not found" });
+      const out = await withResolvedImageOnProject(populated);
 
-      return res.json({ project: populated });
+      return res.json({ project: out });
     } catch (err) {
       return res.status(err.status || 500).json({ message: err.message || "Failed to transfer ownership" });
     }

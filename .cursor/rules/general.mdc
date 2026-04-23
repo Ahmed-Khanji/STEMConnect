@@ -257,6 +257,46 @@ router.post("/attachments/presign-upload", async (req, res) => {
 });
 ```
 
+### JSX Structure
+
+- Group related JSX into logical blocks with a comment above each:
+
+```jsx
+{/* Header */}
+<div className="...">
+  <h1>...</h1>
+</div>
+
+{/* Filters */}
+<div className="...">
+  <FilterBar />
+</div>
+
+{/* Project List */}
+<div className="...">
+  {projects.map(...)}
+</div>
+```
+
+- Blocks should be separated by a blank line for readability
+- Comment should be short and descriptive (e.g. `{/* Empty State */}`, `{/* Action Buttons */}`)
+
+### Component-Scoped Functions
+
+- All helper functions used by a component must be defined **inside** that component or subcomponent — never floating at the module level unless shared across multiple components/files
+
+// Bad — floating outside
+function formatDate(str) { ... }
+export default function ProjectCard() { ... }
+
+// Good — scoped inside
+export default function ProjectCard() {
+function formatDate(str) { ... }
+return (...)
+}
+
+- Exception: if a helper is reused across 2+ components, extract it to a `utils/` file and import it
+
 ### Imports Order
 
 1. External libs

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Project = require("../models/project/Project");
+const { presignedGetUrl } = require("../services/s3");
 
 const httpErr = (status, msg) => Object.assign(new Error(msg), { status });
 
@@ -7,6 +8,8 @@ const COMMITMENTS = new Set(["hackathon", "side_project", "startup"]);
 const PROJECT_STATUSES = new Set(["recruiting", "in_progress", "completed", "archived"]);
 const JOINABLE_PROJECT_STATUSES = new Set(["recruiting", "in_progress"]);
 const KANBAN_TASK_STATUSES = new Set(["todo", "in_progress", "done"]);
+const MAX_IMAGE_URL_LEN = 2048;
+const IMAGE_URL_PRESIGN_SECONDS = 900;
 
 async function assertProjectMember(projectId, userId) {
   if (!mongoose.Types.ObjectId.isValid(projectId)) throw httpErr(400, "Invalid project id");
@@ -114,6 +117,44 @@ async function fetchGithubRepoSummary(repoFullName, accessToken) {
   };
 }
 
+// validate and normalize imageUrl for storage: "" | https URL | S3 object key
+function validateImageUrlForStorage(raw) {
+  const s = raw == null ? "" : String(raw).trim();
+  if (!s) return "";
+  if (s.length > MAX_IMAGE_URL_LEN) throw httpErr(400, "imageUrl is too long");
+  if (/^https?:\/\//i.test(s)) return s;
+  // S3 key path (private bucket: GET responses use presigned URL)
+  const isValidKey = /^[a-zA-Z0-9][a-zA-Z0-9/_.-]*$/.test(s) && !s.includes("..");
+  if (!isValidKey) throw httpErr(400, "Invalid imageUrl: use https URL or a valid S3 object key");
+  return s;
+}
+
+// turn stored key or remote URL into a client-loadable URL for JSON responses
+async function resolveImageUrlForResponse(stored) {
+  const v = stored == null ? "" : String(stored).trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  try {
+    return await presignedGetUrl(v, IMAGE_URL_PRESIGN_SECONDS);
+  } catch {
+    return "";
+  }
+}
+
+// attach resolved imageUrl to a plain project (e.g. `.lean()` result)
+async function withResolvedImageOnProject(projectPlain) {
+  if (!projectPlain || typeof projectPlain !== "object") return projectPlain;
+  const out = { ...projectPlain };
+  out.imageUrl = await resolveImageUrlForResponse(out.imageUrl);
+  return out;
+}
+
+// same as withResolvedImageOnProject but for an array of plain projects
+async function withResolvedImageOnProjects(projects) {
+  if (!Array.isArray(projects) || projects.length === 0) return projects || [];
+  return Promise.all(projects.map((p) => withResolvedImageOnProject(p)));
+}
+
 module.exports = {
   assertProjectMember,
   assertProjectOwner,
@@ -124,6 +165,9 @@ module.exports = {
   JOINABLE_PROJECT_STATUSES,
   KANBAN_TASK_STATUSES,
   PROJECT_STATUSES,
+  resolveImageUrlForResponse,
   userIsOnProject,
+  validateImageUrlForStorage,
   verifyGithubRepoAccess,
+  withResolvedImageOnProject,
 };
