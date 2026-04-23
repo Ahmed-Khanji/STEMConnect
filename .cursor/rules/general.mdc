@@ -1,0 +1,304 @@
+---
+alwaysApply: true
+---
+
+Before giving any response, please read this document and confirm to me by saying "Loaded Rules for STEMConnect"
+
+## 1. Description
+
+STEM Communication Web App: Website where STEM can connect to build projects together, collaborate and prepare for exams and study together.
+
+### Features
+
+- Home page: landing page, this is where he will learn what is STEMConnect, trust the company and click on one of the cards (if not registered/login, will ask him to login)
+  After login, will redirect to one of those rooms/webpage:
+- **Courses** → “Join a course room”: choose course to join the group for chats, video, quizes, meeting, pre-exam study
+- Upload note → set price/free → buy/download → rating.
+- **Projects** → “Join/Create a project team”: Work on projects with colleagues
+- **Tournaments** → “View upcoming competitions”: platform where students can compete in teams for best coding/project (Post a project → recruit teammates → Kanban + standups)
+
+## 2. Tech Stack
+
+| Layer      | Tech                                             |
+| ---------- | ------------------------------------------------ |
+| Frontend   | React, Tailwind CSS, Socket.io-client            |
+| Backend    | Node.js, Express                                 |
+| Database   | MongoDB (Atlas), Mongoose                        |
+| Auth       | JWT → OAuth (Google via Passport.js or Firebase) |
+| Storage    | AWS S3                                           |
+| Testing    | Jest + Supertest (backend), Cypress (frontend)   |
+| Deployment | Vercel (frontend), AWS EC2 (backend)             |
+
+---
+
+## 3. Project Structure
+
+```
+STEMConnect/
+├── backend/
+│   ├── models/
+│   ├── routes/
+│   │   ├── auth/
+│   │   ├── project/
+│   │   └── user/
+│   ├── services/
+│   ├── utils/
+│   └── server.js
+└── frontend/
+    └── src/
+        ├── api/
+        ├── components/
+        ├── context/
+        ├── hooks/
+        ├── lib/
+        └── pages/
+```
+
+---
+
+## 4. Backend Architecture (example)
+
+### Backend Models
+
+- **Project** — `title, description, techstack[], teamRoles[], commitment, status, ownerId, members: [{ userId, role, joinedAt }]`
+  - status: `recruiting | in_progress | completed | archived`
+- **JoinRequest** — `projectId, userId, message, status`
+  - status: `pending | accepted | declined`
+- **KanbanTask** — `projectId, title, assigneeId, status, dueDate`
+- **GithubIntegration** — `projectId, repoFullName, repoUrl, connectedBy, accessToken`
+- **Message** — reused from existing model
+
+### API Routes
+
+```
+// Discovery
+GET    /projects                          — discover feed + filters
+GET    /projects/:id                      — public showcase
+
+// Auth-only
+POST   /projects                          — create project
+GET    /projects/:id/workspace            — members only
+DELETE /projects/:id/leave                — members only (owner must transfer first)
+
+// Join flow
+POST   /projects/:id/join-requests        — send request
+PATCH  /projects/:id/join-requests/:reqId — accept/decline (owner only)
+
+// Tasks
+GET    /projects/:id/tasks                — members only
+POST   /projects/:id/tasks                — members only
+PATCH  /projects/:id/tasks/:taskId        — members only
+DELETE /projects/:id/tasks/:taskId        — members only
+
+// GitHub
+GET    /projects/:id/github               — members only
+POST   /projects/:id/github               — link repo (owner only)
+DELETE /projects/:id/github               — unlink (owner only)
+
+// Ownership
+PATCH  /projects/:id/transfer-ownership   — owner only
+
+// Messages — handled by messageRoutes + Socket.io
+GET    /projects/:id/messages
+```
+
+###
+
+## 5. Frontend Architecture (example)
+
+**Pages:**
+
+- `Projects.jsx` — main entry, discover feed
+- `ProjectShowcase.jsx` — `/projects/:id`
+- `CreateProject.jsx` — `/projects/new`
+- `ProjectWorkspace.jsx` — `/projects/:id/workspace`
+
+**Routes:**
+
+- `/projects` — discover feed
+- `/projects/new` — create form
+- `/projects/:id` — public showcase
+- `/projects/joined` — my projects
+- `/projects/:id/workspace` — workspace (tabs: Chat, Board, Files, Standups, Notes)
+
+**Components:**
+
+```
+// Showcase + Discovery
+ProjectCard, ProjectList, ProjectFilters, ProjectHeader, ProjectForm
+
+// Workspace
+MembersList, WorkspaceTabs, ChatPanel
+KanbanBoard, TaskCard
+GitHubPanel, CommitsList, PullRequestsList, BranchesTree, RepoExplorer
+```
+
+Build Order: Always start with a plan that will build the necessary pages/component for a certain step, then when good were gonna connect apis and services. We do that for each step, example:
+
+1. Discover feed (/projects) with ProjectCard + filters
+2. Project showcase (/projects/:id) with ProjectHeader + join button
+3. Join flow (modal + pending/accepted states)
+4. Create project (/projects/new) with ProjectForm
+5. My projects (/projects/joined) reuse ProjectList
+6. Workspace shell (/projects/:id/workspace) with empty tabs
+7. ChatPanel (Socket.io)
+8. KanbanBoard + TaskCard (basic version)
+9. GitHubPanel + CommitsList + PullRequestsList (add FileExplorer later if needed)
+
+---
+
+## 5. Code Style
+
+### Core Rules
+
+- `async/await` over `.then()`
+- Early returns to avoid nesting
+- Functions ≤ 30–40 lines (backend), keep frontend components focused
+- One responsibility per function/component
+- If code needs explanation → simplify it first
+
+### Naming
+
+- Variables & functions: `camelCase` (use verbs: `getUser`, `createProject`)
+- Components: `PascalCase`
+- Constants: `UPPER_CASE`
+- Booleans: `isLoading`, `hasAccess`, `shouldRedirect`
+
+### Functions
+
+- Max 3–4 params → otherwise use an object
+- No inline complex logic in JSX
+
+```js
+// Bad
+onClick={() => user.role === 'admin' && doSomething()}
+
+// Good
+const canExecute = user.role === 'admin';
+```
+
+### Conditionals
+
+- No nesting deeper than 2 levels — extract into helpers
+
+```js
+// Bad
+if (a) { if (b) { if (c) { ... } } }
+
+// Good
+if (!a || !b || !c) return;
+```
+
+### State (React)
+
+- Keep state minimal — derive when possible
+- Group related state into objects
+- Avoid unnecessary `useEffect`
+- If it can be computed → don't store it
+
+### Error Handling
+
+- Always `try/catch` async code
+- Never leave empty `catch` blocks
+- Return meaningful, consistent errors
+
+### API Response Shape
+
+```json
+{
+  "success": true,
+  "data": {},
+  "error": null
+}
+```
+
+### Comments
+
+- Always add some comments to explain a similar block of code, example:
+
+```js
+// presigned upload URL for attachments, body: { messageId, contentType, fileName, courseId, projectId }
+router.post("/attachments/presign-upload", async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const body = req.body || {};
+    const attachmentScope = await scopeForUser(
+      userId,
+      body.courseId,
+      body.projectId,
+    );
+
+    // validate messageId and contentType
+    const messageId = String(body.messageId || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(messageId))
+      return res.status(400).json({ message: "Invalid messageId" });
+    const contentType = String(body.contentType || "").trim();
+    if (!contentType)
+      return res.status(400).json({ message: "Missing contentType" });
+
+    // constructing S3 key
+    const relativeObjectKey = `${messageId}/${sanitizeFilename(body.fileName)}`;
+    const key =
+      attachmentScope.kind === "course"
+        ? `courses/${attachmentScope.courseId}/${relativeObjectKey}`
+        : `projects/${attachmentScope.projectId}/${relativeObjectKey}`;
+
+    const putUrl = await s3.presignedPutUrl(
+      key,
+      contentType,
+      PRESIGN_URL_EXPIRES_SECONDS,
+    );
+    res.json({ putUrl, key, expiresIn: PRESIGN_URL_EXPIRES_SECONDS });
+  } catch (err) {
+    res
+      .status(err.status || 500)
+      .json({ message: err.message || "presign-upload failed" });
+  }
+});
+```
+
+### Imports Order
+
+1. External libs
+2. Internal modules
+3. Styles
+
+No unused imports.
+
+---
+
+### File Size Limits
+
+- **Backend files:** max **200–250 lines** — if over, split by logic into utils or separate route/service files
+- **Frontend files:** max **350–400 lines** — split into subcomponents if needed
+- One main export per file
+- Keep related logic together — no scattered helpers
+
+## 7. What To Never Do
+
+- Never install new packages without approval
+- Never modify files not explicitly mentioned
+- Never change DB schema or models unless requested
+- Never add `console.log` or debug prints
+- Never refactor unrelated code "while you're there"
+- Never rename variables, functions, or files without reason
+- Never introduce new patterns or libraries on your own
+- Never overwrite existing logic without understanding it
+- Never assume requirements — ask if unclear
+- Never break existing API contracts or response shapes
+- Never hardcode sensitive data (keys, URLs, credentials)
+- Never add unnecessary complexity or abstractions
+
+---
+
+## 8. Response Behavior
+
+- Be concise, direct, and efficient
+- Simple language — no over-explaining
+- Practical answers over theory
+- Actionable steps, not long explanations
+- No filler, no repetition
+- Structure answers for quick scanning
+- Ask for clarification only if truly needed
+- Bullet points over tables
+- Focus strictly on the task — no side topics
