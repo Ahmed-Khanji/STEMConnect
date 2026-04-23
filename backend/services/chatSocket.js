@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const Message = require("../models/Message");
 const { assertCourseAccess } = require("../utils/CourseUtils");
 const { assertProjectMember } = require("../utils/projectUtils");
+const { validateMessagePayload } = require("../utils/MessageUtils");
 const jwt = require("jsonwebtoken");
 
 module.exports = function setupSockets(server) {
@@ -47,21 +48,23 @@ module.exports = function setupSockets(server) {
         socket.on("sendCourseMessage", async ({ courseId, type = "text", content = "", attachments = [] }) => {
           try {
             await assertCourseAccess(courseId, socket.user.id);
-            
-            if (type === "text" && !String(content).trim()) {
-              return socket.emit("errorMessage", { error: "Message content required", status: 400 });
+
+            // validating message type: if text then must has content, if file then must has attachments
+            const v = validateMessagePayload(type, content, attachments);
+            if (v.error) {
+              return socket.emit("errorMessage", { error: v.error, status: v.status });
             }
-        
+
+            // creating message
             const created = await Message.create({
               course: courseId,
               sender: socket.user.id,
-              type,
+              type: v.msgType,
               content: String(content),
               attachments: attachments,
             });
-        
             const populated = await Message.findById(created._id).populate("sender", "name email");
-        
+
             io.to(`course:${courseId}`).emit("newMessage", populated);
           } catch (err) {
             socket.emit("errorMessage", { error: err.message, status: err.status || 500 });
@@ -89,15 +92,18 @@ module.exports = function setupSockets(server) {
         socket.on("sendProjectMessage", async ({ projectId, type = "text", content = "", attachments = [] }) => {
           try {
             await assertProjectMember(projectId, socket.user.id);
-            if (type === "text" && !String(content).trim()) {
-              return socket.emit("errorMessage", { error: "Message content required", status: 400 });
+
+            // validating message type: if text then must has content, if file then must has attachments
+            const v = validateMessagePayload(type, content, attachments);
+            if (v.error) {
+              return socket.emit("errorMessage", { error: v.error, status: v.status });
             }
 
-            // create message inside Message model 
+            // creating message
             const created = await Message.create({
               project: projectId,
               sender: socket.user.id,
-              type,
+              type: v.msgType,
               content: String(content),
               attachments: attachments,
             });

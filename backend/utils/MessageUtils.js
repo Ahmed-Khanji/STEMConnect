@@ -25,4 +25,25 @@ async function scopeForUser(userId, courseId, projectId) {
   return { kind: "project", projectId, prefix: `projects/${projectId}/` };
 }
 
-module.exports = { sanitizeFilename, scopeForUser };
+// top-level type text|file; images use attachments[].kind === "image"
+function validateMessagePayload(type, content, attachments) {
+  const msgType = String(type || "text").trim();
+  if (!["text", "file"].includes(msgType)) {
+    return { error: "Invalid message type", status: 400 };
+  }
+  if (msgType === "text" && !String(content).trim()) {
+    return { error: "Message content required", status: 400 };
+  }
+  if (msgType === "file") {
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+      return { error: "File message requires attachments", status: 400 };
+    }
+    const ok = attachments.every(
+      (a) => a?.url && ["image", "file"].includes(String(a.kind))
+    );
+    if (!ok) return { error: "Invalid attachments", status: 400 };
+  }
+  return { msgType };
+}
+
+module.exports = { sanitizeFilename, scopeForUser, validateMessagePayload };

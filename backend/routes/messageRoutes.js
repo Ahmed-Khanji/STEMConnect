@@ -9,7 +9,7 @@ const s3 = require("../services/s3");
 const router = express.Router();
 const PRESIGN_URL_EXPIRES_SECONDS = 900;
 
-// presigned upload URL for attachments
+// presigned upload URL for attachments, body: { messageId, contentType, fileName, courseId, projectId }
 router.post("/attachments/presign-upload", async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -22,27 +22,14 @@ router.post("/attachments/presign-upload", async (req, res) => {
     const contentType = String(body.contentType || "").trim();
     if (!contentType) return res.status(400).json({ message: "Missing contentType" });
 
-    // check if message exists and belongs to the requested scope
-    const existingMessage = await Message.findById(messageId).select("course project sender");
-    if (existingMessage) {
-      const messageBelongsToRequestedScope =
-        attachmentScope.kind === "course"
-          ? String(existingMessage.course) === String(attachmentScope.courseId)
-          : String(existingMessage.project) === String(attachmentScope.projectId);
-      if (!messageBelongsToRequestedScope) {
-        return res.status(403).json({ message: "Message not in this scope" });
-      }
-      if (String(existingMessage.sender) !== String(userId)) return res.status(403).json({ message: "Forbidden" });
-    }
-
+    // constructing S3 key
     const relativeObjectKey = `${messageId}/${sanitizeFilename(body.fileName)}`;
-    const s3ObjectKey =
-      attachmentScope.kind === "course"
+    const key = attachmentScope.kind === "course"
         ? `courses/${attachmentScope.courseId}/${relativeObjectKey}`
         : `projects/${attachmentScope.projectId}/${relativeObjectKey}`;
 
-    const putUrl = await s3.presignedPutUrl(s3ObjectKey, contentType, PRESIGN_URL_EXPIRES_SECONDS);
-    res.json({ putUrl, key: s3ObjectKey, expiresIn: PRESIGN_URL_EXPIRES_SECONDS });
+    const putUrl = await s3.presignedPutUrl(key, contentType, PRESIGN_URL_EXPIRES_SECONDS);
+    res.json({ putUrl, key, expiresIn: PRESIGN_URL_EXPIRES_SECONDS });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message || "presign-upload failed" });
   }
