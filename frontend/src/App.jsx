@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
-import Home from './pages/Home.jsx';
-import Auth from './pages/Auth.jsx';
-import Course from './pages/Course.jsx';
-import Quiz from "./pages/Quiz.jsx";
-import Test from './pages/Test.jsx';
-import ComingSoon from "./pages/ComingSoon.jsx";
-import Projects from "./pages/Projects.jsx";
+import Home from './pages/home/Home.jsx';
+import Auth from './pages/home/Auth.jsx';
+import Course from './pages/course/Course.jsx';
+import Quiz from "./pages/course/Quiz.jsx";
+import Test from './pages/other/Test.jsx';
+import ComingSoon from "./pages/other/ComingSoon.jsx";
+import Projects from "./pages/project/Projects.jsx";
+import ProjectShowcase from "./pages/project/ProjectShowcase.jsx";
 
 function App() {
 
@@ -20,7 +21,8 @@ function App() {
         <Route path="/courses/:courseId" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path="/courses" element={<ProtectedRoute><Course /></ProtectedRoute>} />
         <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectShowcase />} />
         <Route path="/tournaments" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
         <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
       </Routes>

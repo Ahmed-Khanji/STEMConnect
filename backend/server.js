@@ -23,7 +23,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(passport.initialize());
 
 // Routes
-app.get('/', (req, res) => { res.send('APUI is running...'); });
+app.get('/', (req, res) => { res.send('STEMConnect API is running...'); });
 app.use("/api/auth", authRoutes);
 app.use("/auth", authGoogleRoutes);
 app.use("/api/users", authenticateToken, userRoutes);

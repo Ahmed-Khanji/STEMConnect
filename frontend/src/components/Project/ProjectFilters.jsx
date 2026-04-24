@@ -4,8 +4,10 @@ export default function ProjectFilters({
   query,
   role,
   commitment,
+  sortBy,
   roleOptions,
   commitmentOptions,
+  sortOptions,
   onChange,
 }) {
   return (
@@ -49,13 +51,18 @@ export default function ProjectFilters({
         ))}
       </select>
 
-      {/* Submit */}
-      <button
-        type="button"
-        className="h-11 rounded-xl bg-violet-400 px-6 text-sm font-medium text-slate-950 transition hover:bg-violet-300"
+      {/* Sort by */}
+      <select
+        value={sortBy}
+        onChange={(event) => onChange("sortBy", event.target.value)}
+        className="h-11 min-w-40 rounded-xl border border-white/10 bg-[#0b0c12] px-3 text-sm text-slate-200 outline-none transition focus:border-violet-400/70"
       >
-        Search
-      </button>
+        {sortOptions.map((option) => (
+          <option key={option} value={option}>
+            {option[0].toUpperCase() + option.slice(1)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { Eye, ThumbsUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function ProjectCard({ project }) {
   // compact number for views/likes in card footer e.g. 1.2k
@@ -18,6 +19,7 @@ export default function ProjectCard({ project }) {
   const engagement = project.engagement || {};
 
   return (
+    <Link to={`/projects/${project.id}`} className="block">
     <article className="overflow-hidden rounded-2xl border border-white/10 bg-[#12131a] shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all hover:-translate-y-0.5 hover:border-violet-400/40">
       {/* Cover */}
       <div className="relative h-44 w-full">
@@ -33,7 +35,7 @@ export default function ProjectCard({ project }) {
         {/* Title & description */}
         <div className="space-y-2">
           <h3 className="line-clamp-2 text-xl font-semibold text-white">{project.title}</h3>
-          <p className="line-clamp-2 text-sm text-slate-300">{project.description}</p>
+          <p className="line-clamp-2 text-sm text-slate-300">{project.summary}</p>
         </div>
 
         {/* Owner */}
@@ -64,5 +66,6 @@ export default function ProjectCard({ project }) {
         </div>
       </div>
     </article>
+    </Link>
   );
 }

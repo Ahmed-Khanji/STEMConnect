@@ -12,7 +12,7 @@ import {
 import {
   MIN_HUMAN_QUESTIONS_FOR_QUIZ,
   USER_CONTRIBUTION_THRESHOLD,
-} from "@/lib/quizContributionStorage";
+} from "@/utils/quizContributionStorage";
 
 import StartScreen from "@/components/Quiz/StartScreen";
 import QuizScreen from "@/components/Quiz/QuizScreen";

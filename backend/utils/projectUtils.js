@@ -17,9 +17,8 @@ async function assertProjectMember(projectId, userId) {
   const project = await Project.findById(projectId).select("ownerId members");
   if (!project) throw httpErr(404, "Project not found");
   // check if user is a member of the project
-  const uid = String(userId);
-  if (String(project.ownerId) === uid) return project;
-  const ok = project.members?.some((m) => String(m.userId) === uid);
+  if (String(project.ownerId) === String(userId)) return project;
+  const ok = project.members?.some((m) => String(m.userId) === String(userId));
   if (!ok) throw httpErr(403, "Not a project member");
   return project;
 }
@@ -34,7 +33,7 @@ async function assertProjectOwner(projectId, userId) {
 
 function userIsOnProject(project, userId) {
   if (String(project.ownerId) === String(userId)) return true;
-  return project.members?.some((m) => String(m.userId) === uid) ?? false;
+  return project.members?.some((m) => String(m.userId) === userId) ?? false;
 }
 
 async function verifyGithubRepoAccess(repoFullName, accessToken) {
@@ -56,7 +55,7 @@ function buildProjectListFilter(query) {
   if (q) {
     filter.$or = [
       { title: { $regex: q, $options: "i" } },
-      { description: { $regex: q, $options: "i" } },
+      { summary: { $regex: q, $options: "i" } },
     ];
   }
   if (query.status && PROJECT_STATUSES.has(String(query.status))) filter.status = String(query.status);

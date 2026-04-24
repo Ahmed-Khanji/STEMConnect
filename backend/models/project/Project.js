@@ -12,7 +12,8 @@ const memberSchema = new mongoose.Schema(
 const projectSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
-    description: { type: String, default: "", trim: true },
+    summary: { type: String, default: "", trim: true, maxlength: 300 },
+    description: { type: String, default: "", maxlength: 5000 },
     category: { type: String, default: "", trim: true, index: true },
     techstack: [{ type: String, trim: true }],
     rolesNeeded: [{ type: String, trim: true }],

@@ -44,7 +44,7 @@ function registerPostRoutes(router) {
   // create project (auth)
   router.post("/", authenticateToken, async (req, res) => {
     try {
-      const { title, description, techstack, rolesNeeded, commitment, status, imageUrl } = req.body;
+      const { title, summary, description, techstack, rolesNeeded, commitment, status, imageUrl } = req.body;
       if (!title || !String(title).trim()) {
         return res.status(400).json({ message: "Title is required" });
       }
@@ -62,7 +62,8 @@ function registerPostRoutes(router) {
 
       const project = await Project.create({
         title: String(title).trim(),
-        description: description != null ? String(description).trim() : "",
+        summary: summary != null ? String(summary).trim() : "",
+        description: description != null ? String(description) : "",
         techstack: techstack,
         rolesNeeded: rolesNeeded,
         commitment: commit,

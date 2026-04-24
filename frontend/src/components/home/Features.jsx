@@ -41,13 +41,13 @@ export default function Features() {
     {
       title: tfeat("projects"),
       desc: tfeat("projects_desc"),
-      img: "projects.avif",
+      img: "/projects.avif",
       href: "/projects",
     },
     {
       title: tfeat("tournaments"),
       desc: tfeat("tournaments_desc"),
-      img: "tournaments.jpg",
+      img: "/tournaments.jpg",
       href: "/tournaments",
     },
   ];

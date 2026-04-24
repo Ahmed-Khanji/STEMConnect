@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-import CourseList from "../components/Course/CourseList";
-import ChatArea from "../components/Course/ChatArea";
-import QuickActions from "../components/Course/QuickActions";
-import SearchCourse from "../components/Course/SearchCourse";
-import CreateCourseModal from "../components/Course/CreateCourseModal";
+import CourseList from "../../components/Course/CourseList";
+import ChatArea from "../../components/Course/ChatArea";
+import QuickActions from "../../components/Course/QuickActions";
+import SearchCourse from "../../components/Course/SearchCourse";
+import CreateCourseModal from "../../components/Course/CreateCourseModal";
 
-import { getMyCourses, leaveCourse, getUnreadCounts } from "../api/courseApi";
+import { getMyCourses, leaveCourse, getUnreadCounts } from "../../api/courseApi";
 import { useChatSocket } from "@/hooks/useChatSocket";
 
 import { Menu, X } from "lucide-react";

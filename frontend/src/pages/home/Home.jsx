@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import NavBar from '../components/Home/NavBar';
-import Hero from '../components/Home/Hero';
-import Stats from '../components/Home/Stats';
-import Features from '../components/Home/Features';
-import Footer from '../components/Home/Footer';
+import NavBar from '../../components/Home/NavBar';
+import Hero from '../../components/Home/Hero';
+import Stats from '../../components/Home/Stats';
+import Features from '../../components/Home/Features';
+import Footer from '../../components/Home/Footer';
 
 function Home() {
   // detect if the page is scrolled down
