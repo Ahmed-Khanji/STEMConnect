@@ -257,6 +257,24 @@ router.post("/attachments/presign-upload", async (req, res) => {
 });
 ```
 
+### Function Comments
+
+Every backend function must have a single-line comment directly above it explaining *what* it does or *why* it exists — not *how*.
+
+Bad:
+// checks if COOKIE_SECURE is true or false and returns based on NODE_ENV
+function isSecureCookie() { ... }
+
+Good:
+// secure means cookie is only sent over HTTPS
+function isSecureCookie() { ... }
+
+Rules:
+- One line only, no JSDoc blocks unless explicitly requested
+- Explain purpose/intent, not implementation
+- Use plain english, no filler words like "this function..."
+- Applies to all functions: named, arrow functions assigned to a variable, and class methods
+
 ### JSX Structure
 
 - Group related JSX into logical blocks with a comment above each:
