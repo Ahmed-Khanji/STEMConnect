@@ -23,7 +23,12 @@ export default function ProjectCard({ project }) {
     <article className="overflow-hidden rounded-2xl border border-white/10 bg-[#12131a] shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all hover:-translate-y-0.5 hover:border-violet-400/40">
       {/* Cover */}
       <div className="relative h-44 w-full">
-        <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover" />
+        <img
+          src={project.imageUrl}
+          alt={project.title}
+          className="h-full w-full object-cover"
+          onError={(e) => { e.currentTarget.src = `https://placehold.co/600x300/0f1017/6d28d9?text=${encodeURIComponent(project.title)}`; }}
+        />
 
         <span className="absolute left-3 top-3 rounded-md bg-[#0f1020]/90 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-violet-200">
           {project.category}
@@ -44,6 +49,7 @@ export default function ProjectCard({ project }) {
             src={owner.avatar}
             alt={owner.name}
             className="h-6 w-6 rounded-full border border-white/20 object-cover"
+            onError={(e) => { e.currentTarget.src = `https://placehold.co/48x48/0f1017/6d28d9?text=${encodeURIComponent((owner.name || "U")[0])}`; }}
           />
           <p className="text-xs text-slate-300">{owner.name}</p>
         </div>

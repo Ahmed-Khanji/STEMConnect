@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router-dom";
 import { GraduationCap, FolderOpen, Trophy } from "lucide-react";
@@ -11,6 +11,27 @@ export default function Hero() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showFeaturePopup, setShowFeaturePopup] = useState(false);
+  const dialogRef = useRef(null);
+
+  // Close on Escape and trap focus inside the modal
+  useEffect(() => {
+    if (!showFeaturePopup) return;
+    function onKeyDown(e) {
+      if (e.key === "Escape") { setShowFeaturePopup(false); return; }
+      if (e.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])') || [];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+        e.preventDefault();
+        (e.shiftKey ? last : first)?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    // move focus into dialog on open
+    dialogRef.current?.querySelector('a[href],button')?.focus();
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showFeaturePopup]);
 
   function handleGetStarted() {
     if (!user) {
@@ -97,8 +118,10 @@ export default function Hero() {
       {/* Modal popup (authenticated only) */}
       {showFeaturePopup && (
         <div
+          ref={dialogRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-6"
           role="dialog"
+          aria-modal="true"
           aria-label="Choose a feature"
         >
           {/* Click outside to close: gray, shadowy backdrop */}

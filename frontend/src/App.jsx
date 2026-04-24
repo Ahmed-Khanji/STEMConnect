@@ -23,8 +23,8 @@ function App() {
         <Route path={`/courses/:courseId/quiz`} element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectShowcase />} />
-        <Route path="/tournaments" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-        <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+        <Route path="/tournaments" element={<ComingSoon />} />
+        <Route path="/coming-soon" element={<ComingSoon />} />
       </Routes>
     </div>
   )

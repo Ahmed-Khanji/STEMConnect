@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
-import { Bell, GitBranch, Grid2x2, KanbanSquare, MessageSquare, Folders } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { Bell, GitBranch, Grid2x2, Home, KanbanSquare, MessageSquare, Folders } from "lucide-react";
+import { Link } from "react-router-dom";
 import ProjectFilters from "@/components/Project/ProjectFilters";
 import ProjectList from "@/components/Project/ProjectList";
 import { mockProjects, projectCommitments, projectRoles, projectSortOptions } from "@/utils/mockProjects";
 
-// match project title, summary or category against the search query
+// match project title, summary, category, or techstack against the search query
 function matchesQuery(project, query) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return [project.title, project.summary, project.category].some((field) => String(field).toLowerCase().includes(q));
+  const techMatch = (project.techstack || []).some((t) => t.toLowerCase().includes(q));
+  return techMatch || [project.title, project.summary, project.category].some((field) => String(field).toLowerCase().includes(q));
 }
 
 // sort by most recent update or by total engagement (views + likes)
@@ -40,6 +42,13 @@ export default function Projects() {
     return sortProjects(base, filters.sortBy);
   }, [filters]);
 
+  const defaultFilters = { query: "", role: "all", commitment: "all", sortBy: "recent" };
+
+  const hasActiveFilters =
+    filters.query !== "" || filters.role !== "all" || filters.commitment !== "all";
+
+  const resetFilters = useCallback(() => setFilters(defaultFilters), []);
+
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -50,14 +59,15 @@ export default function Projects() {
         {/* Sidebar */}
         <aside className="hidden w-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1017] p-3 lg:flex lg:flex-col lg:items-center lg:justify-between">
           <div className="space-y-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/20 text-violet-200">
-              <Grid2x2 className="h-5 w-5" />
-            </div>
+            <Link to="/" className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-white/5 hover:text-slate-200 transition" title="Home">
+              <Home className="h-5 w-5" />
+            </Link>
 
             {/* Navigation for different project types */}
             <nav className="space-y-2">
+              
               <button type="button" className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/20 text-violet-200">
-                <Folders className="h-5 w-5" />
+                <Grid2x2 className="h-5 w-5" />
               </button>
               <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-white/5">
                 <MessageSquare className="h-5 w-5" />
@@ -99,7 +109,7 @@ export default function Projects() {
           />
 
           {/* Project List */}
-          <ProjectList projects={filteredProjects} />
+          <ProjectList projects={filteredProjects} hasActiveFilters={hasActiveFilters} onReset={resetFilters} />
         </main>
       </div>
     </div>
