@@ -14,12 +14,15 @@ const messageRoutes = require("./routes/messageRoutes");
 const quizRoutes = require("./routes/quiz");
 const projectRoutes = require("./routes/project");
 
+const cookieParser = require("cookie-parser");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cookieParser());
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(passport.initialize());
 
 // Routes

@@ -19,6 +19,16 @@ export async function login(payload) {
   }
 }
 
+// Claims the short-lived gc_access/gc_refresh cookies set by the Google OAuth callback
+export async function exchangeGoogleTokens() {
+  try {
+    const res = await client.get("/auth/google/exchange", { withCredentials: true });
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
 export async function getMe() {
   try {
     const res = await client.get("/api/auth/me");

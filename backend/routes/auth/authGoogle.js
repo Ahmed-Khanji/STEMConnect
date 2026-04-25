@@ -66,8 +66,7 @@ router.get("/google", passport.authenticate("google", {
 );
 
 // Finish OAuth
-router.get(
-  "/google/callback",
+router.get("/google/callback",
   passport.authenticate("google", {
     session: false,
     failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google`,
@@ -81,9 +80,31 @@ router.get(
     req.user.refreshToken = refreshToken;
     await req.user.save();
 
-    // 3) send both to frontend
-    res.redirect(`${process.env.FRONTEND_URL}/auth?token=${accessToken}&refreshToken=${refreshToken}`);
+    // 3) set short-lived HttpOnly cookies (2-min transport only, claimed by /google/exchange)
+    const cookieOpts = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 2 * 60 * 1000,
+    };
+    res.cookie("gc_access", accessToken, cookieOpts);
+    res.cookie("gc_refresh", refreshToken, cookieOpts);
+    res.redirect(`${process.env.FRONTEND_URL}/auth?google=success`);
   }
 );
+
+// One-time exchange: frontend calls this after the Google callback redirect
+// to claim the transport cookies and get tokens as JSON
+router.get("/google/exchange", (req, res) => {
+  const { gc_access, gc_refresh } = req.cookies;
+  if (!gc_access || !gc_refresh) {
+    return res.status(400).json({ error: "No pending Google session" });
+  }
+  // clear the cookies
+  res.clearCookie("gc_access");
+  res.clearCookie("gc_refresh");
+  // return the tokens as JSON
+  return res.json({ accessToken: gc_access, refreshToken: gc_refresh });
+});
 
 module.exports = router;

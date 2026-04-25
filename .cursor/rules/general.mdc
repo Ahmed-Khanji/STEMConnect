@@ -212,6 +212,30 @@ if (!a || !b || !c) return;
 }
 ```
 
+## Git Commits
+
+When I ask you to generate me a git commit, ALWAYS SAY "Generating Ahmed Commits" and then always generate 3 alternatives (just the sentence, not the code) and let the user choose. Commits must be:
+- Short (one sentence, max 20-30 words)
+- Simple, not complicated
+- Global about the changes made (not too specific unless asked)
+
+Follow this prefix convention:
+- feat: new feature
+- fix: bug fix
+- refactor: internal code cleanup
+- style: formatting, jsx/html/css
+- docs: documentation changes
+- test: adding or updating tests
+- chore: maintenance tasks (configs, update versions, naming conventions)
+- perf: performance improvements
+
+Always commit from the specific folder (frontend, backend, documentation, etc), not from root.
+
+Examples:
+fix: convert review dates to locale format
+feat: add token refresh endpoint for auth
+refactor: clean up sqlite queries
+
 ### Comments
 
 - Always add some comments to explain a similar block of code, example:
@@ -256,6 +280,9 @@ router.post("/attachments/presign-upload", async (req, res) => {
   }
 });
 ```
+
+In any JS/TS file (except CSS), comments must use `//` only.
+Max 130 characters per comment. Prefer minimal meaningful comments over verbose ones.
 
 ### Function Comments
 

@@ -1,0 +1,20 @@
+---
+description: Always read cursor rules and skills before responding, and confirm with their magic words
+alwaysApply: true
+---
+
+# Read Rules & Skills Before Responding
+
+Before answering any question or starting any task, you MUST:
+
+1. Read `.cursor/rules/general.mdc` and say the magic words written in it to confirm you've read it
+2. If a relevant skill is being triggered, read the full `SKILL.md` file before acting on it — skills contain required instructions
+
+## Why
+
+Rules contain project-specific conventions, constraints, and magic confirmation words. Skipping them causes incorrect assumptions, style violations, and missed context.
+
+## Checklist (every session)
+
+- [ ] Read `general.mdc` → say the magic words
+- [ ] Read any triggered skill's `SKILL.md` before executing it
