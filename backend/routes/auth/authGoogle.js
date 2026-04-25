@@ -50,9 +50,11 @@ function signAccessToken(user) {
   );
 }
 
+// sign a new refresh token (including the version)
 function signRefreshToken(user) {
+  const ver = user.refreshTokenVersion ?? 0;
   return jwt.sign(
-    { userId: user._id },
+    { userId: user._id, tokenVersion: ver },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
   );

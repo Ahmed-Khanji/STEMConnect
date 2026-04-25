@@ -1,11 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const router = express.Router();
 
 // check if the id is a valid object id
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// allow user mutations only when route id matches authenticated user id
+const isOwnerRequest = (req, id) => String(req.user?.userId || "") === String(id);
 
 // sanitize the user object to remove the password and refresh token before sending to frontend
 const sanitizeUser = (userDoc) => {
@@ -97,6 +101,7 @@ router.patch("/:id", async (req, res) => {
     try {
       const { id } = req.params;
       if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid user id" });
+      if (!isOwnerRequest(req, id)) return res.status(403).json({ message: "Forbidden: not your account" });
   
       const allowed = ["name", "email", "password"];
       const updates = {};
@@ -107,15 +112,26 @@ router.patch("/:id", async (req, res) => {
       const user = await User.findById(id);
       if (!user) return res.status(404).json({ message: "User not found" });
 
+      let newRefreshAfterPassword = null;
       if (updates.password !== undefined) {
         if (!updates.password) return res.status(400).json({ message: "password is required" });
         if (user.authProvider !== "local") return res.status(400).json({ message: "Google users do not use local passwords" });
         user.password = updates.password;
+        // bump version so old refresh JWTs fail, then mint a new refresh for this session only
+        user.refreshTokenVersion = (user.refreshTokenVersion ?? 0) + 1;
+        newRefreshAfterPassword = jwt.sign(
+          { userId: user._id, tokenVersion: user.refreshTokenVersion },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: "7d" }
+        );
+        user.refreshToken = newRefreshAfterPassword;
       }
       if (updates.name !== undefined) user.name = updates.name;
       if (updates.email !== undefined) user.email = updates.email;
       const saved = await user.save();
-      return res.json(saved);
+      const body = sanitizeUser(saved);
+      if (newRefreshAfterPassword) body.refreshToken = newRefreshAfterPassword;
+      return res.json(body);
     } catch (err) {
       if (err?.code === 11000) return res.status(409).json({ message: `Duplicate key error: ${JSON.stringify(err.keyValue)} | ${err.message}` });
       return res.status(500).json({ message: `Server error: ${err.message}` });
@@ -129,6 +145,7 @@ router.patch("/:id/refresh-token", async (req, res) => {
     const { id } = req.params;
     const { refreshToken } = req.body;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid user id" });
+    if (!isOwnerRequest(req, id)) return res.status(403).json({ message: "Forbidden: not your account" });
     if (!refreshToken) return res.status(400).json({ message: "refreshToken is required" });
 
     const user = await User.findByIdAndUpdate(
@@ -149,6 +166,7 @@ router.delete("/:id/refresh-token", async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid user id" });
+    if (!isOwnerRequest(req, id)) return res.status(403).json({ message: "Forbidden: not your account" });
 
     const user = await User.findByIdAndUpdate(id, { refreshToken: null }, { new: true });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -164,6 +182,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid user id" });
+    if (!isOwnerRequest(req, id)) return res.status(403).json({ message: "Forbidden: not your account" });
 
     const deleted = await User.findByIdAndDelete(id).select("-password -refreshToken");
     if (!deleted) return res.status(404).json({ message: "User not found" });

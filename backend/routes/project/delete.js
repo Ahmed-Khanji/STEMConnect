@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Project = require("../../models/project/Project");
 const KanbanTask = require("../../models/project/KanbanTask");
 const GithubIntegration = require("../../models/project/GithubIntegration");
+const JoinRequest = require("../../models/project/JoinRequest");
+const Message = require("../../models/Message");
 const { authenticateToken } = require("../auth/authRoutes");
 const { assertProjectMember, assertProjectOwner } = require("../../utils/projectUtils");
 
@@ -81,7 +83,16 @@ function registerDeleteRoutes(router) {
 
       // check if user is the owner and delete the project
       await assertProjectOwner(id, req.user.userId);
-      await Project.deleteOne({ _id: id });
+      const result = await Project.deleteOne({ _id: id });
+      if (result.deletedCount === 0) return res.status(404).json({ message: "Project not found" });
+
+      // cascade delete project-bound data
+      await Promise.all([
+        KanbanTask.deleteMany({ projectId: id }),
+        GithubIntegration.deleteMany({ projectId: id }),
+        JoinRequest.deleteMany({ projectId: id }),
+        Message.deleteMany({ projectId: id }),
+      ]);
 
       return res.status(204).send();
     } catch (err) {

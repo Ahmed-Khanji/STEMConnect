@@ -4,6 +4,26 @@ const express = require('express');
 
 const router = express.Router();
 
+// async wrapper so refresh rotation can await jwt.verify without nested callbacks
+function verifyRefreshTokenAsync(token) {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+      if (err) reject(err);
+      else resolve(decoded);
+    });
+  });
+}
+
+// embeds refreshTokenVersion in refresh JWT so password bumps invalidate old tokens
+function signRefreshToken(user) {
+  const ver = user.refreshTokenVersion ?? 0;
+  return jwt.sign(
+    { userId: user._id, tokenVersion: ver },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization']; // Expected format: "Bearer TOKEN"
     const token = authHeader?.split(' ')[1]; // Get the TOKEN part
@@ -90,11 +110,7 @@ router.post("/login", async (req, res) => {
         { expiresIn: "1h" }
       );
   
-      const refreshToken = jwt.sign(
-        { userId: user._id },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: "7d" }
-      );
+      const refreshToken = signRefreshToken(user);
       // store refresh token in DB
       user.refreshToken = refreshToken;
       await user.save();
@@ -124,7 +140,7 @@ router.delete("/logout", async (req, res) => {
     }
 });
   
-// ==== Refresh Token (new access token) ====
+// ==== Refresh Token (rotate refresh + new access token) ====
 router.post("/token", async (req, res) => {
     try {
       const { refreshToken } = req.body;
@@ -132,22 +148,42 @@ router.post("/token", async (req, res) => {
 
       const user = await User.findOne({ refreshToken });
       if (!user) return res.sendStatus(403);
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-        if (err) return res.sendStatus(403);
-        // Issue a new access token
-        const accessToken = jwt.sign(
-          {
-            userId: user._id,
-            email: user.email,
-            name: user.name,
-            authProvider: user.authProvider
-          },
-          process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "1h" }
-        );
-  
-        return res.status(200).json({ accessToken });
-      });
+      
+      // verify the refresh token
+      let decoded;
+      try {
+        decoded = await verifyRefreshTokenAsync(refreshToken);
+      } catch {
+        return res.sendStatus(403);
+      }
+      if (String(decoded.userId) !== String(user._id)) return res.sendStatus(403);
+
+      // check if the refresh token version is the same as the user's refresh token version
+      const ver = decoded.tokenVersion;
+      const versionOk =
+        Number(ver) === user.refreshTokenVersion ||
+        (ver === undefined && (user.refreshTokenVersion ?? 0) === 0);
+      if (!versionOk) return res.sendStatus(403);
+
+      // sign a new access token
+      const accessToken = jwt.sign(
+        {
+          userId: user._id,
+          email: user.email,
+          name: user.name,
+          authProvider: user.authProvider
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      // sign a new refresh token
+      const newRefresh = signRefreshToken(user);
+      user.refreshToken = newRefresh;
+      await user.save();
+
+      // return the new access token and refresh token
+      return res.status(200).json({ accessToken, refreshToken: newRefresh });
     } catch (err) {
       return res.status(500).json({ message: `Server error: ${err.message}` });
     }

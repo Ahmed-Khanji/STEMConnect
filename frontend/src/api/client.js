@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE = "";
+const API_BASE = import.meta.env.MODE === "production" // when run vite build or npm run build, it becomes production
+  ? "https://your-backend.render.com" // or your AWS URL (TODO: change to actual production backend URL)
+  : "";
 
 const client = axios.create({
   baseURL: API_BASE,
@@ -38,14 +40,17 @@ function processQueue(error, newAccessToken = null) {
   refreshQueue = [];
 }
 
+// request a new access token from the server
 async function requestNewAccessToken() {
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) throw new Error("Missing refresh token");
 
   const res = await axios.post(`${API_BASE}/api/auth/token`, { refreshToken });
   const newAccessToken = res.data.accessToken;
+  const newRefresh = res.data.refreshToken;
+  if (newAccessToken) localStorage.setItem("accessToken", newAccessToken);
+  if (newRefresh) localStorage.setItem("refreshToken", newRefresh);
 
-  localStorage.setItem("accessToken", newAccessToken);
   return newAccessToken;
 }
 

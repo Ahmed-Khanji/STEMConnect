@@ -88,7 +88,7 @@ function registerPatchRoutes(router) {
       project.ownerId = newOwnerId;
       for (const m of project.members) {
         if (String(m.userId) === String(newOwnerId)) m.role = "owner";
-        else if (String(m.userId) === String(req.user.userId)) m.role = "";
+        else if (String(m.userId) === String(req.user.userId)) m.role = "member";
       }
       await project.save();
       const populated = await Project.findById(id)

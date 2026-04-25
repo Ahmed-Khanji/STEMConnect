@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
     authProvider: { type: String, enum: ["local", "google"], default: "local" },
     oauthId: { type: String, unique: true, sparse: true, default: null },
     refreshToken: { type: String, default: null },
+    refreshTokenVersion: { type: Number, default: 0 },
     courses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }], // many-to-many
 }, { timestamps: true });
 
