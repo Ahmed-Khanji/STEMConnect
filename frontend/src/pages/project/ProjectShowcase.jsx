@@ -1,11 +1,30 @@
-import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ProjectHeader from "@/components/Project/ProjectHeader";
 import { getMockProjectById } from "@/utils/mockProjects";
 
 export default function ProjectShowcase() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const project = getMockProjectById(id);
+
+  // keep all "back to discovery" actions consistent
+  function handleBackToDiscovery(event) {
+    if (event) event.preventDefault();
+    navigate("/projects");
+  }
+
+  // let users close showcase quickly with Escape
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key !== "Escape") return;
+      handleBackToDiscovery();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // not-found state
   if (!project) {
@@ -15,6 +34,7 @@ export default function ProjectShowcase() {
         <p className="text-sm text-slate-400">This project may have been removed or the link is invalid.</p>
         <Link
           to="/projects"
+          onClick={handleBackToDiscovery}
           className="inline-flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -34,6 +54,7 @@ export default function ProjectShowcase() {
         {/* Back link */}
         <Link
           to="/projects"
+          onClick={handleBackToDiscovery}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition"
         >
           <ArrowLeft className="h-4 w-4" />

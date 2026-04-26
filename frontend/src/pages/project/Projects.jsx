@@ -55,9 +55,9 @@ export default function Projects() {
 
   return (
     <div className="min-h-screen bg-[#090a10] text-slate-100">
-      <div className="flex w-full gap-6 px-4 py-6 md:px-6">
+      <div className="flex w-full px-4 py-6 md:px-6">
         {/* Sidebar */}
-        <aside className="hidden w-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1017] p-3 lg:flex lg:flex-col lg:items-center lg:justify-between">
+        <aside className="hidden w-20 rounded-2xl border border-white/10 bg-[#0f1017] p-3 lg:fixed lg:bottom-6 lg:left-6 lg:top-6 lg:flex lg:flex-col lg:items-center lg:justify-between">
           <div className="space-y-4">
             <Link to="/" className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-white/5 hover:text-slate-200 transition" title="Home">
               <Home className="h-5 w-5" />
@@ -87,7 +87,7 @@ export default function Projects() {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 space-y-5">
+        <main className="flex-1 space-y-5 lg:ml-[104px] lg:pl-6">
           {/* Header */}
           <header>
             <div>
