@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
+import { App } from "antd";
 import { getCourseById } from "@/api/courseApi";
 import {
   getLatestQuiz,
@@ -20,6 +21,7 @@ import ResultScreen from "@/components/Quiz/ResultScreen";
 import ContributionScreen from "@/components/Quiz/ContributionScreen";
 
 export default function Quiz() {
+  const { message } = App.useApp();
   const [view, setView] = useState("landing"); // "loading", "quiz", "result", "contribution"
   const [questions, setQuestions] = useState([]);
   const [quizId, setQuizId] = useState(null);
@@ -95,7 +97,7 @@ export default function Quiz() {
         const data = await getCourseById(courseId);
         setCourse(data);
       } catch (err) {
-        alert("Course not found or you don't have access to it.");
+        message.error("Course not found or you don't have access to it.");
         navigate("/courses", { replace: true });
       } finally {
         setLoading(false);
@@ -128,7 +130,7 @@ export default function Quiz() {
       // 404 = no quiz yet → create one (will exit the catch block)
       if (status !== 404) {
         // if not 404, something went wrong
-        alert("Could not load quiz. Please try again.");
+        message.error("Could not load quiz. Please try again.");
         setView("landing");
         return;
       }
@@ -172,7 +174,7 @@ export default function Quiz() {
         setView("contribution");
         return;
       }
-      alert("Could not create quiz. Please try again.");
+      message.error("Could not create quiz. Please try again.");
       setView("landing");
     }
   }

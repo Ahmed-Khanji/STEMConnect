@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 
 /* ---------- Main Component ---------- */
@@ -11,8 +10,8 @@ export default function Footer() {
     links: [
       { label: tfoot("explore.courses"), href: "/courses" },
       { label: tfoot("explore.projects"), href: "/projects" },
-      { label: tfoot("explore.quizzes"), href: "/quizzes" },
-      { label: tfoot("explore.exams"), href: "/exams" },
+      { label: tfoot("explore.quizzes"), href: "/courses" },
+      { label: tfoot("explore.exams"), href: "/coming-soon" },
       { label: tfoot("explore.tournaments"), href: "/tournaments" },
     ],
   };
@@ -20,10 +19,10 @@ export default function Footer() {
   const support = {
     title: tfoot("support.title"),
     links: [
-      { label: tfoot("support.safety"), href: "/safety" },
-      { label: tfoot("support.privacy"), href: "/privacy" },
-      { label: tfoot("support.terms"), href: "/terms" },
-      { label: tfoot("support.contact"), href: "/contact" },
+      { label: tfoot("support.safety"), href: "/support/safety" },
+      { label: tfoot("support.privacy"), href: "/support/privacy" },
+      { label: tfoot("support.terms"), href: "/support/terms" },
+      { label: tfoot("support.contact"), href: "/support/contact" },
     ],
   };
 

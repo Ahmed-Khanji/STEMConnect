@@ -8,8 +8,10 @@ import { markCourseRead } from "@/api/courseApi";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/context/ThemeContext";
 import { useCourseRoom } from "@/hooks/useCourseRoom";
+import { App } from "antd";
 
 export default function ChatArea({ socket, course, onSelectCourse, onCreateClick }) {
+  const { message } = App.useApp();
   const { user } = useAuth();
   const myId = user?.userId || user?._id || user?.id;
 
@@ -107,8 +109,7 @@ export default function ChatArea({ socket, course, onSelectCourse, onCreateClick
         // mark course as read when opened
         await markCourseRead(courseId).catch(() => {});
       } catch (err) {
-        // optional: show toast rather than alert
-        alert(err.message || "Failed to load messages");
+        message.error(err.message || "Failed to load messages");
       } finally {
         if (alive) setLoading(false);
       }
@@ -283,6 +284,36 @@ function MessagesArea({ course, messages, loading, scrollRef, bottomRef, myId })
 }
 
 function InputArea({ inputValue, setInputValue, handleSend, sending, disabled }) {
+  const textareaRef = useRef(null);
+
+  function handleInputKeyDown(e) {
+    if (e.key !== "Enter") return;
+    if (e.shiftKey) return;
+    e.preventDefault();
+    handleSend();
+  }
+
+  function resizeTextarea() {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const maxHeight = 72; // 3 lines * 24px line-height
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  }
+
+  useEffect(() => {
+    resizeTextarea();
+  }, [inputValue]);
+
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.style.height = "24px";
+      textareaRef.current.style.overflowY = "hidden";
+    }
+  }, [disabled]);
+
   return (
     <div className="border-t border-gray-300 p-4">
       <div className="flex items-end gap-3">
@@ -301,13 +332,15 @@ function InputArea({ inputValue, setInputValue, handleSend, sending, disabled })
         </button>
 
         <div className="flex-1 bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             placeholder={disabled ? "Select a course to chat..." : "Type a message..."}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-500"
+            onInput={resizeTextarea}
+            onKeyDown={handleInputKeyDown}
+            rows={1}
+            className="flex-1 bg-transparent outline-none text-sm leading-6 text-gray-900 placeholder-gray-500 resize-none"
             disabled={disabled || sending}
           />
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -64,14 +63,10 @@ export default function Features() {
           - lg: 3 side-by-side
       */}
       <div className="flex flex-wrap gap-6 lg:gap-8 justify-center">
-        {cards.map((c, i) => (
+        {cards.map((c) => (
           <FeatureCard
             key={c.title}
             {...c}
-            className={
-              // center the 3rd card only on md (two-per-row breakpoint)
-              i === 2 ? "md:mx-auto lg:mx-0" : ""
-            }
           />
         ))}
       </div>

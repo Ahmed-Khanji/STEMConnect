@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SendHorizontal, ArrowLeft, Sun, Moon, Bolt, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import {
   createQuestion,
@@ -11,6 +11,7 @@ import {
   MIN_HUMAN_QUESTIONS_FOR_QUIZ,
   USER_CONTRIBUTION_THRESHOLD,
 } from "@/utils/quizContributionStorage";
+import { getCurrentSemester } from "@/utils/semester";
 
 /* ===== Small helpers ===== */
 
@@ -281,16 +282,6 @@ export default function ContributionScreen({
 /* ===== Sections ===== */
 
 function TopHeader({ isDarkMode, toggleDarkMode, onBack, courseName }) {
-    function getCurrentSemester() {
-        const now = new Date();
-        const month = now.getMonth();
-        const year = now.getFullYear();
-      
-        if (month <= 4) return `Winter ${year}`;
-        if (month <= 7) return `Summer ${year}`;
-        return `Fall ${year}`;
-    }
-
     return (
     <header className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-4">

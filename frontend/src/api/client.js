@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.MODE === "production" // when run vite build or npm run build, it becomes production
+export const API_BASE = import.meta.env.MODE === "production" // when run vite build or npm run build, it becomes production
   ? "https://your-backend.render.com" // or your AWS URL (TODO: change to actual production backend URL)
   : "";
 

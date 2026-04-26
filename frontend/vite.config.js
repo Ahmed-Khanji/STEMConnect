@@ -11,7 +11,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // proxy the api endpoint to the backend
       "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      // proxy all google auth subpaths (/auth/google, /callback, /exchange)
+      "/auth/google": {
         target: "http://localhost:3000",
         changeOrigin: true,
       },

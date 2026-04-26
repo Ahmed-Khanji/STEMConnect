@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
-import { GraduationCap, BookOpenCheck, Menu, X, Home } from "lucide-react";
+import { GraduationCap, BookOpenCheck, Home } from "lucide-react";
+import { Modal } from "antd";
 import { Button } from "../ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { getCurrentSemester } from "@/utils/semester";
+import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 
 /* ---------- Main Component ---------- */
-export default function CourseList({ courses, selectedCourse, onSelectCourse, onDropCourse, listOpen, onToggleList }) {
+export default function CourseList({ courses, selectedCourse, onSelectCourse, onDropCourse }) {
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-br from-purple-300 to-blue-300 border-r border-white/30">
-      <Header listOpen={listOpen} onToggleList={onToggleList} />
+      <Header />
 
       <Courses
         courses={courses}
@@ -25,46 +28,12 @@ export default function CourseList({ courses, selectedCourse, onSelectCourse, on
   );
 }
 
-/* ---------- Helpers ---------- */
-function getCurrentSemester() {
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-
-  if (month <= 4) return `Winter ${year}`;
-  if (month <= 7) return `Summer ${year}`;
-  return `Fall ${year}`;
-}
-
 function getCourseId(course) {
   return course?._id || course?.id;
 }
 
-function getInitials(user) {
-  const full =
-    user?.name ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    user?.email ||
-    "";
-  const parts = full.trim().split(/\s+/).filter(Boolean);
-
-  // 2 letters (ex: "John Doe" -> JD)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return "U";
-}
-
-function getDisplayName(user) {
-  return (
-    user?.name ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    user?.email ||
-    "User"
-  );
-}
-
 /* ---------- Sections ---------- */
-function Header({ listOpen, onToggleList }) {
+function Header() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-2">
@@ -88,16 +57,6 @@ function Header({ listOpen, onToggleList }) {
           <Home className="w-5 h-5" />
         </Link>
 
-        {/* Toggle collapse list (later) */}
-        {/* <button
-          type="button"
-          onClick={onToggleList}
-          className="rounded-xl bg-white/60 p-2 shadow-sm hover:bg-white/80 transition"
-          aria-label={listOpen ? "Hide course list" : "Show course list"}
-          title={listOpen ? "Hide" : "Show"}
-        >
-          {listOpen ? <X size={18} /> : <Menu size={18} />}
-        </button> */}
       </div>
     </div>
   );
@@ -165,6 +124,7 @@ function Courses({ courses, selectedCourse, onSelectCourse }) {
 
 function DropButton({ selectedCourse, onDropCourse }) {
   if (!selectedCourse) return null;
+  const courseName = selectedCourse?.name || "this course";
 
   return (
     <div className="px-4 pb-4">
@@ -175,7 +135,15 @@ function DropButton({ selectedCourse, onDropCourse }) {
           e.stopPropagation();
           if (!onDropCourse) return;
           const courseId = getCourseId(selectedCourse);
-          if (courseId) onDropCourse(courseId);
+          if (!courseId) return;
+          Modal.confirm({
+            title: "Drop course?",
+            content: `You will leave ${courseName} and lose access to its chat and updates.`,
+            okText: "Drop",
+            cancelText: "Cancel",
+            okButtonProps: { danger: true },
+            onOk: () => onDropCourse(courseId),
+          });
         }}
         className="w-full"
       >
@@ -207,8 +175,8 @@ function UserProfile() {
     );
   }
 
-  const initials = getInitials(user);
-  const name = getDisplayName(user);
+  const initials = getUserInitials(user);
+  const name = getUserDisplayName(user);
   return (
     <div className="p-4">
       <div className="flex items-center gap-3">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { App } from "antd";
 import { login } from "../../api/authApi";
+import { API_BASE } from "../../api/client";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { GoogleIcon, EyeIcon, EyeOffIcon } from "../ui/icons";
 
@@ -65,7 +66,9 @@ export default function Login({ onSwitchToRegister }) {
   }
 
   function handleGoogle() {
-    window.location.href = "http://localhost:3000/auth/google";
+    // use API_BASE in deploy, and relative /auth in dev (served by Vite proxy)
+    const googleUrl = API_BASE ? `${API_BASE}/auth/google` : "/auth/google";
+    window.location.href = googleUrl;
   }
 
   return (

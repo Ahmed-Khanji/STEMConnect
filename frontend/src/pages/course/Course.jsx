@@ -9,14 +9,18 @@ import CreateCourseModal from "../../components/Course/CreateCourseModal";
 
 import { getMyCourses, leaveCourse, getUnreadCounts } from "../../api/courseApi";
 import { useChatSocket } from "@/hooks/useChatSocket";
+import { useAuth } from "@/context/AuthContext";
 
 import { Menu, X } from "lucide-react";
+import { App } from "antd";
 
 export default function Course() {
+  const { user } = useAuth();
+  const { message } = App.useApp();
   const { courseId: courseIdFromRoute } = useParams();
   const navigate = useNavigate();
 
-  const socket = useChatSocket(localStorage.getItem("accessToken"));
+  const socket = useChatSocket();
 
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -59,7 +63,7 @@ export default function Course() {
   });
 
   useEffect(() => {
-    if (!socket || !courses.length) return;
+    if (!user || !socket || !courses.length) return;
 
     // Join all enrolled course rooms so socket receives their messages
     courses.forEach((c) => {
@@ -78,7 +82,7 @@ export default function Course() {
 
     socket.on("newMessage", onNewMessage);
     return () => socket.off("newMessage", onNewMessage);
-  }, [socket, courses, selectedCourseId]);
+  }, [user, socket, courses, selectedCourseId]);
 
   // Keep selection in sync with /courses/:courseId (e.g. back from quiz deep-link)
   useEffect(() => {
@@ -146,7 +150,7 @@ export default function Course() {
       });
     } catch (err) {
       console.error("Drop failed:", err);
-      alert(err.message || "Failed to drop course");
+      message.error(err.message || "Failed to drop course");
     }
   }
 
@@ -207,8 +211,6 @@ export default function Course() {
           selectedCourse={selectedCourse}
           onSelectCourse={handleSelectCourse}
           onDropCourse={handleDropCourse}
-          listOpen={listOpen}
-          onToggleList={() => setListOpen(v => !v)}
         />
       </div>
 

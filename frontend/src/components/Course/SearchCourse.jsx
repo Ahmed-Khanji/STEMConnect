@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { getAllCourses, joinCourseByCode } from "../../api/courseApi";
+import { App } from "antd";
 
 export default function SearchCourse({ onSelectCourse, onCreateClick, className = "" }) {
+  const { message } = App.useApp();
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
   // Helper: join flow (uses API, then selects the course)
   async function handleJoin(course) {
     if (!course?.code) {
-      alert("Course code is missing");
+      message.error("Course code is missing");
       return;
     }
 
@@ -52,7 +54,7 @@ export default function SearchCourse({ onSelectCourse, onCreateClick, className 
       await joinCourseByCode(course.code);
       selectCourse(course);
     } catch (err) {
-      alert(err?.message || "Failed to join course");
+      message.error(err?.message || "Failed to join course");
     } finally {
       setJoiningCourseId(null);
     }

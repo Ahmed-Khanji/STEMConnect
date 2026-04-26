@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X, Sun, Moon, Check, ArrowRight, CheckCircle } from "lucide-react";
 
 // Normalize a short-answer text for comparison (trim + lowercase + collapse spaces)
@@ -53,12 +53,17 @@ export default function QuizScreen({
   const [quizDone, setQuizDone] = useState(false);
   const finishedRef = useRef(false);
   const pendingFinishRef = useRef(null);
+  const startedAtRef = useRef(Date.now());
+  const endsAtRef = useRef(Date.now() + durationSeconds * 1000);
 
   const totalQuestions = questions?.length || 0;
   const currentQuestion = questions?.[currentIdx];
   const currentIsShortAnswer = isShortAnswer(currentQuestion);
 
   useEffect(() => {
+    const now = Date.now();
+    startedAtRef.current = now;
+    endsAtRef.current = now + durationSeconds * 1000;
     setCurrentIdx(0);
     setSelectedOption(null);
     setShortAnswerText("");
@@ -71,14 +76,23 @@ export default function QuizScreen({
     pendingFinishRef.current = null;
   }, [questions, durationSeconds]);
 
-  // Count down once per second
+  // Compute remaining time from wall clock to avoid drift in throttled/background tabs
   useEffect(() => {
-    if (quizDone || timeLeft <= 0) return;
-    const id = setTimeout(() => {
-      setTimeLeft((t) => (t <= 1 ? 0 : t - 1));
-    }, 1000);
-    return () => clearTimeout(id);
-  }, [timeLeft, quizDone]);
+    if (quizDone) return;
+    const updateTimeLeft = () => {
+      const msLeft = endsAtRef.current - Date.now();
+      const next = Math.max(0, Math.ceil(msLeft / 1000));
+      setTimeLeft(next);
+    };
+    updateTimeLeft();
+    const id = setInterval(updateTimeLeft, 250);
+    return () => clearInterval(id);
+  }, [quizDone, durationSeconds]);
+
+  function getElapsedSeconds() {
+    const elapsedMs = Date.now() - startedAtRef.current;
+    return Math.min(durationSeconds, Math.max(0, Math.round(elapsedMs / 1000)));
+  }
 
   const finishWith = useCallback(
     (payload) => {
@@ -105,11 +119,11 @@ export default function QuizScreen({
         ...answers,
         buildEntry(currentQuestion, selectedOption, shortAnswerText, isCorrect),
       ];
-      finishWith({ score: nextScore, answers: nextAnswers, timeTakenSeconds: durationSeconds });
+      finishWith({ score: nextScore, answers: nextAnswers, timeTakenSeconds: getElapsedSeconds() });
     } else {
-      finishWith({ score, answers, timeTakenSeconds: durationSeconds });
+      finishWith({ score, answers, timeTakenSeconds: getElapsedSeconds() });
     }
-  }, [timeLeft, quizDone, submitted, selectedOption, shortAnswerText, currentQuestion, currentIsShortAnswer, score, answers, durationSeconds, finishWith]);
+  }, [timeLeft, quizDone, submitted, selectedOption, shortAnswerText, currentQuestion, currentIsShortAnswer, score, answers, finishWith]);
 
   function handleSubmit() {
     if (!currentQuestion || submitted) return;
@@ -129,7 +143,7 @@ export default function QuizScreen({
       pendingFinishRef.current = {
         score: nextScore,
         answers: nextAnswers,
-        timeTakenSeconds: durationSeconds - timeLeft,
+        timeTakenSeconds: getElapsedSeconds(),
       };
     }
   }

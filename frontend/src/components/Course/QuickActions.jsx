@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Zap, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getLatestQuiz, getMyAttempts } from "@/api/quizApi";
+import { getSemesterProgress } from "@/utils/semester";
 
 export default function QuickActions({ course }) {
   const navigate = useNavigate();
@@ -44,35 +45,6 @@ export default function QuickActions({ course }) {
       <ProgressCard courseId={courseId} />
     </div>
   );
-}
-
-// Returns { label, name, percent } for the current semester progress
-function getSemesterProgress() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0-based
-
-  let name, start, end;
-
-  if (month <= 4) {
-    name = `Winter ${year}`;
-    start = new Date(year, 0, 1);   // Jan 1
-    end   = new Date(year, 4, 31);  // May 31
-  } else if (month <= 7) {
-    name = `Summer ${year}`;
-    start = new Date(year, 5, 1);   // Jun 1
-    end   = new Date(year, 7, 31);  // Aug 31
-  } else {
-    name = `Fall ${year}`;
-    start = new Date(year, 8, 1);   // Sep 1
-    end   = new Date(year, 11, 31); // Dec 31
-  }
-
-  const totalMonths   = end - start;
-  const elapsedMonths = Math.max(0, now - start);
-  const percent   = Math.min(100, Math.round((elapsedMonths / totalMonths) * 100));
-
-  return { name, percent };
 }
 
 function ProgressCard({ courseId }) {

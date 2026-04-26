@@ -64,7 +64,8 @@ app.use(helmet({
 app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(passport.initialize());
 app.use(globalLimiter);
-app.use("/api/auth", authLimiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
 
 // Routes
 app.get('/', (req, res) => { res.send('STEMConnect API is running...'); });
@@ -132,6 +133,7 @@ async function shutdown(signal) {
   isShuttingDown = true;
   console.log(`${signal} received. Starting graceful shutdown...`);
 
+  // close http server
   server.close(async (err) => {
     if (err) {
       console.error("Error while closing HTTP server", err);
@@ -139,6 +141,7 @@ async function shutdown(signal) {
       return;
     }
 
+    // close database connection
     try {
       await mongoose.disconnect();
       console.log("MongoDB disconnected. Shutdown complete.");

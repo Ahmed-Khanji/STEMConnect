@@ -1,4 +1,3 @@
-import React from "react";
 import { Trophy, Frown } from "lucide-react";
 
 export default function ResultScreen({ score, total, courseName, onRestart, onBackToCourse }) {

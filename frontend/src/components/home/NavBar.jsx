@@ -6,14 +6,7 @@ import { MdOutlineNightlight, MdNightlight, MdOutlineLightMode, MdLightMode } fr
 import { GrLanguage } from "react-icons/gr";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/context/ThemeContext";
-
-function getInitials(user) {
-  const name = user?.name || user?.firstName || "";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] || "";
-  const second = parts[1]?.[0] || "";
-  return (first + second).toUpperCase() || "U";
-}
+import { getUserInitials } from "@/utils/userDisplay";
 
 function NavBar({ scrolled = false}) {
   const { t } = useTranslation();
@@ -109,7 +102,7 @@ function NavBar({ scrolled = false}) {
                             flex items-center justify-center font-semibold text-black dark:text-slate-200"
                   title={user?.name || user?.email || "User"}
                 >
-                  {getInitials(user)}
+                  {getUserInitials(user)}
                 </div>
 
                 {/* logout button */}

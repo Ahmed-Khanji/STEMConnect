@@ -4,19 +4,21 @@ import { io } from "socket.io-client";
 // Socket (browser) connects directly to API host (server)
 const socketUrl = import.meta.env.VITE_API_BASE || "http://localhost:3000";
 
-export function useChatSocket(token) {
+export function useChatSocket() {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    // Don’t connect without a token
-    if (!token) return;
     // Prevent multiple socket connections
     if (socketRef.current) return;
+    // Don’t connect without an access token
+    const initialToken = localStorage.getItem("accessToken");
+    if (!initialToken) return;
     // Create socket connection
     const socket = io(socketUrl, {
       transports: ["websocket"],
       withCredentials: true,
-      auth: { token },
+      // Always read latest token on connect/reconnect attempts
+      auth: (callback) => callback({ token: localStorage.getItem("accessToken") }),
     });
     socketRef.current = socket;
 
@@ -29,7 +31,7 @@ export function useChatSocket(token) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token]);
+  }, []);
 
   // Expose the socket instance
   return socketRef.current;

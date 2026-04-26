@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,6 +12,7 @@ import {
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
+import { getCurrentSemester } from "@/utils/semester";
 
 export default function StartScreen({
   course,
@@ -29,15 +29,6 @@ export default function StartScreen({
   const durationMinutes = 5;
   const questionCount = 5;
 
-  function getCurrentSemester() {
-    const now = new Date();
-    const month = now.getMonth();
-    const year = now.getFullYear();
-  
-    if (month <= 4) return `Winter ${year}`;
-    if (month <= 7) return `Summer ${year}`;
-    return `Fall ${year}`;
-  }
   const semester = getCurrentSemester();
 
   return (
