@@ -1,0 +1,29 @@
+# deps & build artifacts
+node_modules
+npm-debug.log*
+coverage
+
+# env files — injected at runtime, never baked into the image
+.env
+.env.*
+
+# vcs
+.git
+.gitignore
+.gitattributes
+
+# tests
+__tests__
+*.test.js
+*.spec.js
+
+# editor / os
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# misc
+*.md
+Dockerfile
+.dockerignore
