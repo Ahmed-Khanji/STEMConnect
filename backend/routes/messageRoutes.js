@@ -50,9 +50,9 @@ router.post("/attachments/presign-download", async (req, res) => {
 
     // load message and specific attachment
     const message = await Message.findById(body.messageId).select("courseId projectId attachments");
-    if (!message) return res.status(404).json({ message: "Not found" });
+    if (!message) return res.status(404).json({ message: "Message Not found" });
     const attachment = message.attachments?.[attachmentIndex];
-    if (!attachment?.url) return res.status(404).json({ message: "Not found" });
+    if (!attachment?.url) return res.status(404).json({ message: "Attachment Not found" });
 
     // validate access to course or project
     if (message.courseId) await assertCourseAccess(message.courseId, userId);

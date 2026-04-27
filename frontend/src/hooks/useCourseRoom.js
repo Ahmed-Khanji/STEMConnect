@@ -10,7 +10,7 @@ export function useCourseRoom({ socket, courseId, setMessages }) {
     // msg is the populated part that comes from backend io.to(`course:${courseId}`).emit("newMessage", populated);
     const onNewMessage = (msg) => {
       // Ignore messages for other courses
-      if (String(msg?.course) !== String(courseId)) return;
+      if (String(msg?.courseId) !== String(courseId)) return;
 
       // Append message once (dedupe by id to avoid duplicates)
       setMessages((prev) => {
