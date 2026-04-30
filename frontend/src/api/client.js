@@ -1,8 +1,7 @@
 import axios from "axios";
 
-export const API_BASE = import.meta.env.MODE === "production" // when run vite build or npm run build, it becomes production
-  ? "https://your-backend.render.com" // or your AWS URL (TODO: change to actual production backend URL)
-  : "";
+// empty string in dev so Vite proxy handles routing; env var in prod points to EC2
+export const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 const client = axios.create({
   baseURL: API_BASE,
